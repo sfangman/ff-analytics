@@ -22,13 +22,19 @@ Requires [uv](https://docs.astral.sh/uv/).
 ## Usage
 
 ```
+./refresh.sh   # pull data and rebuild the dashboard
+```
+
+Or run the steps individually:
+
+```
 uv run --env-file .env metrics.py   # pull data from ESPN, write CSVs
 uv run dashboard.py                 # build docs/index.html from CSVs
 ```
 
 - `metrics.py` pulls completed weeks only (current week is skipped)
 - `dashboard.py` reads only local CSVs, so re-run it freely without hitting ESPN
-- Re-run both weekly to refresh
+- Re-run weekly to refresh
 
 ## Outputs
 
@@ -61,3 +67,4 @@ Notes:
 - `dashboard.py`: derived metrics (luck, lineups) and HTML build
 - `dashboard_template.html`: dashboard layout, styles, and charts
 - `moves.py`: roster, waiver, and schedule data pull (writes `output/moves/`)
+- `refresh.sh`: weekly refresh (data pull + dashboard build)
