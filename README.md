@@ -66,5 +66,4 @@ Notes:
 - `metrics.py`: ESPN data pull and base metrics
 - `dashboard.py`: derived metrics (luck, lineups) and HTML build
 - `dashboard_template.html`: dashboard layout, styles, and charts
-- `moves.py`: roster, waiver, and schedule data pull (writes `output/moves/`)
 - `refresh.sh`: weekly refresh (data pull + dashboard build)
