@@ -27,7 +27,7 @@ jobs:
       - name: Pull ESPN data
         run: uv run metrics.py
         env:
-          ESPN_LEAGUE_ID: ${{ vars.ESPN_LEAGUE_ID }}
+          ESPN_LEAGUE_ID: ${{ secrets.ESPN_LEAGUE_ID }}
           ESPN_YEAR: ${{ vars.ESPN_YEAR }}
           ESPN_S2: ${{ secrets.ESPN_S2 }}
           ESPN_SWID: ${{ secrets.ESPN_SWID }}

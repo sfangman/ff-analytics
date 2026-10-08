@@ -44,8 +44,8 @@ uv run dashboard.py                 # build docs/index.html from CSVs
 Setup:
 - Settings → Pages → Source: GitHub Actions
 - Settings → Secrets and variables → Actions:
-  - Variables: `ESPN_LEAGUE_ID`, `ESPN_YEAR`
-  - Secrets: `ESPN_S2`, `ESPN_SWID`
+  - Variables: `ESPN_YEAR`
+  - Secrets: `ESPN_LEAGUE_ID`, `ESPN_S2`, `ESPN_SWID`
 - `espn_s2` expires periodically; if the run fails, update the secret with a fresh cookie
 
 ## Outputs
