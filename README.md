@@ -38,16 +38,19 @@ uv run dashboard.py                 # build docs/index.html from CSVs
 
 ### Auto refresh
 
-`.github/workflows/refresh.yml` rebuilds and commits `docs/index.html` every Wednesday (or on demand from the Actions tab).
+`.github/workflows/refresh.yml` rebuilds the dashboard and deploys it to GitHub Pages:
+- Every Wednesday, on push to `main`, or on demand from the Actions tab
 
-Setup (Settings → Secrets and variables → Actions):
-- Variables: `ESPN_LEAGUE_ID`, `ESPN_YEAR`
-- Secrets: `ESPN_S2`, `ESPN_SWID`
+Setup:
+- Settings → Pages → Source: GitHub Actions
+- Settings → Secrets and variables → Actions:
+  - Variables: `ESPN_LEAGUE_ID`, `ESPN_YEAR`
+  - Secrets: `ESPN_S2`, `ESPN_SWID`
 - `espn_s2` expires periodically; if the run fails, update the secret with a fresh cookie
 
 ## Outputs
 
-`docs/index.html`: interactive, self-contained dashboard; published via GitHub Pages
+`docs/index.html` (gitignored): interactive, self-contained dashboard; deployed to GitHub Pages by the workflow
 
 Local data in `output/` (gitignored):
 
