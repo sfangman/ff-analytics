@@ -50,7 +50,7 @@ Setup:
 
 ## Outputs
 
-`output/site/index.html`: interactive, self-contained dashboard; deployed to GitHub Pages by the workflow
+`output/site/index.html`: interactive, self-contained dashboard (League / Projections / Players tabs); deployed to GitHub Pages by the workflow
 
 Local data in `output/` (gitignored):
 

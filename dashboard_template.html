@@ -11,25 +11,25 @@
     --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
     --grid: #e1e0d9; --axis: #c3c2b7;
     --pos: #2a78d6; --neg: #e34948; --mid: #f0efec; --deemph: #b5b4ad;
-    --good: #006300; --bad: #c03030;
+    --up: #1f64b9; --down: #c03030;  /* text steps of pos/neg */
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
-      --page: #0d0d0d; --surface: #1a1a19; --border: rgba(255,255,255,0.10);
-      --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
-      --grid: #2c2c2a; --axis: #383835;
-      --pos: #3987e5; --neg: #e66767; --mid: #383835; --deemph: #6b6a65;
-      --good: #0ca30c; --bad: #e66767;
+      --page: #121211; --surface: #1c1c1b; --border: rgba(255,255,255,0.09);
+      --ink: #ededeb; --ink2: #c9c8c0; --muted: #a3a29b;
+      --grid: #2e2e2c; --axis: #4a4945;
+      --pos: #3987e5; --neg: #e66767; --mid: #2a2a28; --deemph: #7a7973;
+      --up: #6aa5ee; --down: #ef7b7b;
     }
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --page: #0d0d0d; --surface: #1a1a19; --border: rgba(255,255,255,0.10);
-    --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
-    --grid: #2c2c2a; --axis: #383835;
-    --pos: #3987e5; --neg: #e66767; --mid: #383835; --deemph: #6b6a65;
-    --good: #0ca30c; --bad: #e66767;
+    --page: #121211; --surface: #1c1c1b; --border: rgba(255,255,255,0.09);
+    --ink: #ededeb; --ink2: #c9c8c0; --muted: #a3a29b;
+    --grid: #2e2e2c; --axis: #4a4945;
+    --pos: #3987e5; --neg: #e66767; --mid: #2a2a28; --deemph: #7a7973;
+    --up: #6aa5ee; --down: #ef7b7b;
   }
 
   * { box-sizing: border-box; }
@@ -43,11 +43,19 @@
   h2 { margin: 0; font-size: 15px; font-weight: 600; }
   .card-sub { margin: 2px 0 12px; color: var(--ink2); font-size: 13px; }
 
-  .filters { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 0 -24px 8px; padding: 10px 24px;
+  [hidden] { display: none !important; }
+  .filters { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between;
+             margin: 0 -24px 8px; padding: 10px 24px;
              position: sticky; top: 0; z-index: 5; border-bottom: 1px solid transparent;
              background: color-mix(in oklab, var(--page) 85%, transparent); backdrop-filter: blur(10px); }
   .section-label { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
                    margin: 20px 0 10px; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs button { font: inherit; font-weight: 600; color: var(--ink2); background: none; border: 1px solid transparent;
+                 border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  .tabs button:hover { color: var(--ink); }
+  .tabs button[aria-selected="true"] { color: var(--ink); background: var(--surface); border-color: var(--border); }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
   .filters label { display: flex; align-items: center; gap: 8px; color: var(--ink2); font-size: 13px; }
   select, .seg button, .ghost { font: inherit; color: var(--ink); background: var(--surface);
          border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
@@ -97,14 +105,12 @@
   td { border-bottom: 1px solid var(--grid); }
   tbody tr:hover td { background: color-mix(in oklab, var(--ink) 4%, transparent); }
   tr.hl td { background: color-mix(in oklab, var(--pos) 10%, transparent); font-weight: 600; }
-  .up { color: var(--good); } .down { color: var(--bad); }
+  .up { color: var(--up); } .down { color: var(--down); }
   .muted { color: var(--muted); }
   .scroll { overflow-x: auto; }
   .tall { max-height: 560px; overflow: auto; }
   .pos-pill { display: inline-block; min-width: 34px; padding: 1px 6px; border-radius: 6px; font-size: 11px;
               font-weight: 600; text-align: center; background: var(--mid); color: var(--ink2); }
-  details summary { cursor: pointer; font-weight: 600; font-size: 15px; }
-  details[open] summary { margin-bottom: 12px; }
   .notes { color: var(--ink2); font-size: 12px; margin: 8px 0 0; padding-left: 18px; }
   .notes li { margin: 2px 0; }
 
@@ -134,7 +140,7 @@
   .form { display: inline-flex; gap: 3px; }
   .form b { width: 18px; height: 18px; border-radius: 4px; display: inline-grid; place-items: center; font-size: 11px;
             background: var(--mid); color: var(--ink2); }
-  .form b.W { background: color-mix(in oklab, var(--good) 18%, var(--surface)); color: var(--good); }
+  .form b.W { background: color-mix(in oklab, var(--pos) 20%, var(--surface)); color: var(--up); }
   .meter { display: inline-flex; align-items: center; gap: 8px; width: 100%; min-width: 160px; }
   .meter i { flex: 1; height: 8px; background: var(--mid); border-radius: 4px; overflow: hidden; }
   .meter i b { display: block; height: 100%; background: var(--pos); border-radius: 0 4px 4px 0; }
@@ -158,46 +164,41 @@
     <button class="ghost" id="theme" type="button" aria-label="Toggle theme" title="Toggle theme">◐</button>
   </header>
 
-  <div class="filters">
-    <div class="seg" id="dim" role="group" aria-label="Roster group">
-      <button type="button" data-dim="starters" aria-pressed="true">Starters</button>
-      <button type="button" data-dim="bench" aria-pressed="false">Bench</button>
-      <button type="button" data-dim="total" aria-pressed="false">Total</button>
+  <nav class="filters" aria-label="Dashboard">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="league">League</button>
+      <button type="button" role="tab" data-tab="projections">Projections</button>
+      <button type="button" role="tab" data-tab="players">Players</button>
     </div>
-    <label>Highlight team <select id="team"><option value="">All teams</option></select></label>
-    <label>Position <select id="pos"><option value="">All</option></select></label>
-  </div>
-
-  <div class="section-label" id="week-label"></div>
-  <section class="card full">
-    <h2>Recap</h2>
-    <p class="card-sub">Awards and final scores</p>
-    <div class="awards" id="awards"></div>
-    <h2 class="sub-h">Scoreboard</h2>
-    <div class="games" id="games"></div>
-  </section>
-
-  <div class="section-label">Season to date</div>
-  <section class="card full" style="margin-bottom:16px">
-    <h2>Power rankings</h2>
-    <p class="card-sub">Power score (0–100) = 50% all-play win % + 30% all-play win % over the last 3 weeks + 20% actual win %. Arrows show the move since last week.</p>
-    <div class="scroll"><table id="power"></table></div>
-  </section>
-
-  <section class="kpis" id="kpis"></section>
-
-  <section class="grid">
-    <div class="card">
-      <h2>Points vs ESPN projection</h2>
-      <p class="card-sub"><span class="dim-name">Starters</span>: actual minus projected, season to date</p>
-      <div id="bars"></div>
+    <div class="controls">
+      <label>Team <select id="team"><option value="">All teams</option></select></label>
+      <div class="seg" id="dim" role="group" aria-label="Roster group" data-tabs="projections">
+        <button type="button" data-dim="starters" aria-pressed="true">Starters</button>
+        <button type="button" data-dim="bench" aria-pressed="false">Bench</button>
+        <button type="button" data-dim="total" aria-pressed="false">Total</button>
+      </div>
+      <label data-tabs="players">Position <select id="pos"><option value="">All</option></select></label>
     </div>
-    <div class="card">
-      <h2>Week by week</h2>
-      <p class="card-sub"><span class="dim-name">Starters</span>: actual minus projected each week. Hover a cell for the matchup.</p>
-      <div id="heat"></div>
-    </div>
-    <div class="card">
+  </nav>
+
+  <div data-page="league">
+    <div class="section-label" id="week-label"></div>
+    <section class="card full">
+      <h2>Recap</h2>
+      <p class="card-sub">Awards and final scores</p>
+      <div class="awards" id="awards"></div>
+      <h2 class="sub-h">Scoreboard</h2>
+      <div class="games" id="games"></div>
+    </section>
+
+    <div class="section-label">Season to date</div>
+    <section class="card full" style="margin-bottom:16px">
+      <h2>Power rankings</h2>
+      <p class="card-sub">Power score (0–100) = 50% all-play win % + 30% all-play win % over the last 3 weeks + 20% actual win %. Arrows show the move since last week.</p>
+      <div class="scroll"><table id="power"></table></div>
+    </section>
+
+    <section class="card full" style="margin-bottom:16px">
       <h2>Luck: actual wins vs expected wins</h2>
       <p class="card-sub">Expected wins: what your scores would have earned playing every team, every week. Luck = actual − expected.</p>
       <div class="legend">
@@ -205,39 +206,60 @@
         <span><i class="key" style="background:var(--deemph)"></i>Expected wins</span>
       </div>
       <div id="luck"></div>
-    </div>
-    <div class="card">
-      <h2>Lineup calls vs ESPN</h2>
-      <p class="card-sub">Your starters' points minus what ESPN's highest-projected lineup would have scored</p>
-      <div id="calls"></div>
-    </div>
-  </section>
+    </section>
 
-  <section class="card full" style="margin-bottom:16px">
-    <h2>Standings &amp; advanced metrics</h2>
-    <p class="card-sub">Click a column to sort</p>
-    <div class="scroll"><table id="standings"></table></div>
-  </section>
+    <section class="card full" style="margin-bottom:16px">
+      <h2>Standings &amp; advanced metrics</h2>
+      <p class="card-sub">Click a column to sort</p>
+      <div class="scroll"><table id="standings"></table></div>
+    </section>
+  </div>
 
-  <section class="grid">
-    <div class="card">
-      <h2>Boom: beat projections most</h2>
-      <p class="card-sub">Season actual minus projected, weeks on a roster</p>
-      <table id="boom"></table>
-    </div>
-    <div class="card">
-      <h2>Bust: furthest below projections</h2>
-      <p class="card-sub">Season actual minus projected, weeks on a roster</p>
-      <table id="bust"></table>
-    </div>
-  </section>
+  <div data-page="projections">
+    <div class="section-label">Season to date</div>
+    <section class="kpis" id="kpis"></section>
 
-  <section class="card full">
-    <details>
-      <summary>All rostered players</summary>
+    <section class="grid">
+      <div class="card">
+        <h2>Points vs ESPN projection</h2>
+        <p class="card-sub"><span class="dim-name">Starters</span>: actual minus projected, season to date</p>
+        <div id="bars"></div>
+      </div>
+      <div class="card">
+        <h2>Lineup calls vs ESPN</h2>
+        <p class="card-sub">Your starters' points minus what ESPN's highest-projected lineup would have scored</p>
+        <div id="calls"></div>
+      </div>
+    </section>
+
+    <section class="card full" style="margin-bottom:16px">
+      <h2>Week by week</h2>
+      <p class="card-sub"><span class="dim-name">Starters</span>: actual minus projected each week. Hover a cell for the matchup.</p>
+      <div id="heat"></div>
+    </section>
+  </div>
+
+  <div data-page="players">
+    <div class="section-label">Season to date</div>
+    <section class="grid">
+      <div class="card">
+        <h2>Boom: beat projections most</h2>
+        <p class="card-sub">Season actual minus projected, weeks on a roster</p>
+        <table id="boom"></table>
+      </div>
+      <div class="card">
+        <h2>Bust: furthest below projections</h2>
+        <p class="card-sub">Season actual minus projected, weeks on a roster</p>
+        <table id="bust"></table>
+      </div>
+    </section>
+
+    <section class="card full" style="margin-bottom:16px">
+      <h2>All rostered players</h2>
+      <p class="card-sub">Click a column to sort</p>
       <div class="scroll tall"><table id="players"></table></div>
-    </details>
-  </section>
+    </section>
+  </div>
 
   <ul class="notes">
     <li>Source: ESPN fantasy API. Projections are ESPN's latest pre-game projections. Completed weeks only.</li>
@@ -316,7 +338,7 @@ function bindTip(node, content) {
 // ---------- charts ----------
 const W = 600, LABEL_W = 200, ROW_H = 30, BAR_H = 16;
 
-function divergingBars(host, rows, tipFor) {
+function divergingBars(host, rows, tipFor, W = 600) {
   host.replaceChildren();
   const pad = 52, top = 4, H = top + rows.length * ROW_H + 4;
   const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' }, host);
@@ -333,7 +355,7 @@ function divergingBars(host, rows, tipFor) {
   svgEl('line', { class: 'baseline', x1: zero, x2: zero, y1: top - 2, y2: H - 2 }, svg);
 }
 
-function heatmap(host, teams) {
+function heatmap(host, teams, W = 1200) {
   host.replaceChildren();
   const weeks = [...new Set(D.weeks.map(w => w.week))].sort((a, b) => a - b);
   const top = 22, gap = 2, cw = (W - LABEL_W) / weeks.length, H = top + teams.length * ROW_H;
@@ -363,7 +385,7 @@ function heatmap(host, teams) {
   });
 }
 
-function luckChart(host, rows) {
+function luckChart(host, rows, W = 1200) {
   host.replaceChildren();
   const maxW = D.meta.weeks, top = 4, axisH = 22, padR = 56, H = top + rows.length * ROW_H + axisH;
   const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' }, host);
@@ -377,7 +399,7 @@ function luckChart(host, rows) {
     const y = top + i * ROW_H + ROW_H / 2, g = svgEl('g', { class: rowClass(t.team) }, svg);
     const actual = t.wins + 0.5 * t.ties;
     svgText(g, LABEL_W - 8, y, t.team, { class: 'lbl', 'text-anchor': 'end' });
-    svgEl('line', { x1: sx(t.exp_wins), x2: sx(actual), y1: y, y2: y, stroke: 'var(--axis)', 'stroke-width': 2 }, g);
+    svgEl('line', { x1: sx(t.exp_wins), x2: sx(actual), y1: y, y2: y, stroke: 'var(--deemph)', 'stroke-width': 2 }, g);
     svgEl('circle', { class: 'mark', cx: sx(t.exp_wins), cy: y, r: 5, fill: 'var(--deemph)', stroke: 'var(--surface)', 'stroke-width': 2 }, g);
     svgEl('circle', { class: 'mark', cx: sx(actual), cy: y, r: 5, fill: 'var(--pos)', stroke: 'var(--surface)', 'stroke-width': 2 }, g);
     svgText(g, W - 4, y, sign(t.luck), { class: 'val', 'text-anchor': 'end' });
@@ -427,9 +449,8 @@ function sortableTable(table, cols, rows, sortState, rowTeam) {
 const signedCol = (key, label, title) => ({ key, label, title, fmt: r => sign(r[key]), cls: r => dirClass(r[key]) });
 const posPill = r => h('span', { className: 'pos-pill', textContent: r.position });
 
-const standingsSort = { key: 'starters_diff', dir: -1 };
+const standingsSort = { key: 'record', dir: -1 };
 function standings() {
-  const d = state.dim;
   sortableTable(document.getElementById('standings'), [
     { key: 'team', label: 'Team', left: true },
     { key: 'record', label: 'Record', fmt: record, sort: r => r.wins + 0.5 * r.ties },
@@ -437,8 +458,6 @@ function standings() {
     { key: 'pa', label: 'PA', fmt: r => fix(r.pa) },
     { key: 'allplay_wins', label: 'All-play', fmt: allplay, title: 'Record vs every team, every week' },
     signedCol('luck', 'Luck', 'Actual wins minus expected wins (what your scores would earn vs every team, every week)'),
-    { key: d + '_projected', label: DIM_NAMES[d] + ' proj', fmt: r => fix(r[d + '_projected']) },
-    { key: d + '_actual', label: DIM_NAMES[d] + ' actual', fmt: r => fix(r[d + '_actual']) },
     signedCol('starters_diff', 'Starters ±'),
     signedCol('bench_diff', 'Bench ±'),
     signedCol('total_diff', 'Total ±'),
@@ -622,6 +641,22 @@ document.getElementById('theme').addEventListener('click', () => {
   root.dataset.theme = dark ? 'light' : 'dark';
 });
 
+// ---------- tabs ----------
+const TABS = ['league', 'projections', 'players'];
+function showTab() {
+  const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : TABS[0];
+  document.querySelectorAll('[role="tab"]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  document.querySelectorAll('[data-page]').forEach(e => (e.hidden = e.dataset.page !== tab));
+  document.querySelectorAll('[data-tabs]').forEach(e => (e.hidden = e.dataset.tabs !== tab));
+}
+document.querySelectorAll('[role="tab"]').forEach(b => b.addEventListener('click', () => {
+  history.pushState(null, '', '#' + b.dataset.tab);  // pushState: no jump to elements with matching ids
+  showTab();
+  scrollTo(0, 0);
+}));
+addEventListener('popstate', showTab);
+
+showTab();
 kpis();
 render();
 </script>
