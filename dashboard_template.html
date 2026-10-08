@@ -4,10 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fantasy Advanced Analytics</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' stroke='%2352514e'><path d='M16 28C6 21 3 15 3 10.5 3 6.9 5.9 4 9.5 4c2.8 0 5.2 1.7 6.5 4 1.3-2.3 3.7-4 6.5-4C26.1 4 29 6.9 29 10.5 29 15 26 21 16 28Z' stroke='%23e34948'/><path d='M16 8v14M14.2 12h3.6M14.2 15.5h3.6M14.2 19h3.6M11.5 8.5C9 7.5 6.5 9 7 11.5c-1.5 1-1 3.5 1 4 .5 2 3 2 3.5.5M20.5 8.5c2.5-1 5 .5 4.5 3 1.5 1 1 3.5-1 4-.5 2-3 2-3.5.5'/></svg>">
 <style>
   :root {
     color-scheme: light;
-    --page: #f9f9f7; --surface: #fcfcfb; --border: rgba(11,11,11,0.10);
+    --page: #ebe9e3; --surface: #ffffff; --border: rgba(11,11,11,0.13);
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05);
     --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
     --grid: #e1e0d9; --axis: #c3c2b7;
     --pos: #2a78d6; --neg: #e34948; --mid: #f0efec; --deemph: #b5b4ad;
@@ -16,7 +18,8 @@
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
-      --page: #121211; --surface: #1c1c1b; --border: rgba(255,255,255,0.09);
+      --page: #0a0a09; --surface: #1f1f1d; --border: rgba(255,255,255,0.13);
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 4px 14px rgba(0,0,0,.35);
       --ink: #ededeb; --ink2: #c9c8c0; --muted: #a3a29b;
       --grid: #2e2e2c; --axis: #4a4945;
       --pos: #3987e5; --neg: #e66767; --mid: #2a2a28; --deemph: #7a7973;
@@ -25,7 +28,8 @@
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --page: #121211; --surface: #1c1c1b; --border: rgba(255,255,255,0.09);
+    --page: #0a0a09; --surface: #1f1f1d; --border: rgba(255,255,255,0.13);
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 4px 14px rgba(0,0,0,.35);
     --ink: #ededeb; --ink2: #c9c8c0; --muted: #a3a29b;
     --grid: #2e2e2c; --axis: #4a4945;
     --pos: #3987e5; --neg: #e66767; --mid: #2a2a28; --deemph: #7a7973;
@@ -37,6 +41,8 @@
          font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 1280px; margin: 0 auto; padding: 32px 24px 48px; }
   header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 56px; height: 56px; flex: none; color: var(--ink); }
   .eyebrow { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   h1 { margin: 4px 0 2px; font-size: 28px; font-weight: 650; letter-spacing: -.01em; }
   .sub { color: var(--ink2); }
@@ -68,7 +74,7 @@
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; min-width: 0;
-          box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+          box-shadow: var(--shadow); }
   .full { grid-column: 1 / -1; }
   .tile .label { color: var(--ink2); font-size: 13px; }
   .tile .value { font-size: 30px; font-weight: 650; margin: 4px 0 2px; }
@@ -162,10 +168,15 @@
 <body>
 <main>
   <header>
-    <div>
-      <div class="eyebrow">Advanced analytics</div>
-      <h1 id="title"></h1>
-      <div class="sub" id="subtitle"></div>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" aria-hidden="true">
+        <path d="M16 28C6 21 3 15 3 10.5 3 6.9 5.9 4 9.5 4c2.8 0 5.2 1.7 6.5 4 1.3-2.3 3.7-4 6.5-4C26.1 4 29 6.9 29 10.5 29 15 26 21 16 28Z" stroke="var(--neg)"/><path d="M16 8v14M14.2 12h3.6M14.2 15.5h3.6M14.2 19h3.6M11.5 8.5C9 7.5 6.5 9 7 11.5c-1.5 1-1 3.5 1 4 .5 2 3 2 3.5.5M20.5 8.5c2.5-1 5 .5 4.5 3 1.5 1 1 3.5-1 4-.5 2-3 2-3.5.5"/>
+      </svg>
+      <div>
+        <div class="eyebrow">Advanced analytics</div>
+        <h1 id="title"></h1>
+        <div class="sub" id="subtitle"></div>
+      </div>
     </div>
     <button class="ghost" id="theme" type="button" aria-label="Toggle theme" title="Toggle theme">◐</button>
   </header>
