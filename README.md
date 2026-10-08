@@ -29,7 +29,7 @@ Or run the steps individually:
 
 ```
 uv run --env-file .env metrics.py   # pull data from ESPN, write CSVs
-uv run dashboard.py                 # build docs/index.html from CSVs
+uv run dashboard.py                 # build output/site/index.html from CSVs
 ```
 
 - `metrics.py` pulls completed weeks only (current week is skipped)
@@ -50,7 +50,7 @@ Setup:
 
 ## Outputs
 
-`docs/index.html` (gitignored): interactive, self-contained dashboard; deployed to GitHub Pages by the workflow
+`output/site/index.html`: interactive, self-contained dashboard; deployed to GitHub Pages by the workflow
 
 Local data in `output/` (gitignored):
 

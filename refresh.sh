@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pull ESPN data and rebuild docs/index.html
+# Pull ESPN data and rebuild output/site/index.html
 set -euo pipefail
 cd "$(dirname "$0")"
 

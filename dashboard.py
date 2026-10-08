@@ -1,4 +1,4 @@
-"""Build docs/index.html (published via GitHub Pages) from the CSVs written by metrics.py."""
+"""Build output/site/index.html (deployed to GitHub Pages) from the CSVs written by metrics.py."""
 
 import json
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 OUT = Path("output")
-DOCS = Path("docs")
+SITE = OUT / "site"
 
 
 def best_lineup(roster: pd.DataFrame, slots: list[str], rank_by: str) -> list:
@@ -109,8 +109,8 @@ def main():
 
     payload = json.dumps(data).replace("</", "<\\/")
     html = Path("dashboard_template.html").read_text().replace("__DATA__", payload)
-    out = DOCS / "index.html"
-    DOCS.mkdir(exist_ok=True)
+    out = SITE / "index.html"
+    SITE.mkdir(exist_ok=True)
     out.write_text(html)
     print(f"Wrote {out}")
 
