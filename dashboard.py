@@ -113,7 +113,9 @@ def season_players(players: pd.DataFrame) -> pd.DataFrame:
     )
     s["diff"] = s.actual - s.projected
     s["started"] = started.groupby(key).week.count()
-    s["started_diff"] = (started.actual - started.projected).groupby([started.player, started.team]).sum()
+    s["started_projected"] = started.groupby(key).projected.sum()
+    s["started_actual"] = started.groupby(key).actual.sum()
+    s["started_diff"] = s.started_actual - s.started_projected
     s["bench_pts"] = bench.groupby(key).actual.sum()
     return s.fillna(0).reset_index()
 

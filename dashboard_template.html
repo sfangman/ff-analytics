@@ -244,12 +244,12 @@
     <section class="grid">
       <div class="card">
         <h2>Boom: beat projections most</h2>
-        <p class="card-sub">Season actual minus projected, weeks on a roster</p>
+        <p class="card-sub">Points minus projection in weeks started, season to date</p>
         <table id="boom"></table>
       </div>
       <div class="card">
         <h2>Bust: furthest below projections</h2>
-        <p class="card-sub">Season actual minus projected, weeks on a roster</p>
+        <p class="card-sub">Points minus projection in weeks started, season to date</p>
         <table id="bust"></table>
       </div>
     </section>
@@ -477,13 +477,14 @@ function leaderboards() {
     { key: 'player', label: 'Player', left: true },
     { key: 'position', label: 'Pos', left: true, fmt: posPill },
     { key: 'team', label: 'Fantasy team', left: true, cls: () => 'muted' },
-    { key: 'projected', label: 'Proj', fmt: r => fix(r.projected) },
-    { key: 'actual', label: 'Actual', fmt: r => fix(r.actual) },
-    signedCol('diff', '±'),
+    { key: 'started', label: 'Started' },
+    { key: 'started_projected', label: 'Proj', fmt: r => fix(r.started_projected) },
+    { key: 'started_actual', label: 'Actual', fmt: r => fix(r.started_actual) },
+    signedCol('started_diff', '±'),
   ];
-  const top = (arr, dir) => [...arr].sort((a, b) => (b.diff - a.diff) * dir).slice(0, 10);
-  sortableTable(document.getElementById('boom'), cols, top(ps.filter(p => p.diff > 0), 1), { key: 'diff', dir: -1 }, r => r.team);
-  sortableTable(document.getElementById('bust'), cols, top(ps.filter(p => p.diff < 0), -1), { key: 'diff', dir: 1 }, r => r.team);
+  const top = (arr, dir) => [...arr].sort((a, b) => (b.started_diff - a.started_diff) * dir).slice(0, 10);
+  sortableTable(document.getElementById('boom'), cols, top(ps.filter(p => p.started_diff > 0), 1), { key: 'started_diff', dir: -1 }, r => r.team);
+  sortableTable(document.getElementById('bust'), cols, top(ps.filter(p => p.started_diff < 0), -1), { key: 'started_diff', dir: 1 }, r => r.team);
 }
 
 const playerSort = { key: 'diff', dir: -1 };
