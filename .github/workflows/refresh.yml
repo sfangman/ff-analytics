@@ -2,8 +2,8 @@ name: Refresh dashboard
 
 on:
   schedule:
-    # Wed 14:00 UTC: after MNF and once ESPN has advanced to the next week
-    - cron: "0 14 * * 3"
+    # Thu 10:00 UTC (6am ET): MNF and stat corrections final, before TNF
+    - cron: "0 10 * * 4"
   push:
     branches: [main]
   workflow_dispatch:

@@ -39,7 +39,7 @@ uv run dashboard.py                 # build docs/index.html from CSVs
 ### Auto refresh
 
 `.github/workflows/refresh.yml` rebuilds the dashboard and deploys it to GitHub Pages:
-- Every Wednesday, on push to `main`, or on demand from the Actions tab
+- Every Thursday morning, on push to `main`, or on demand from the Actions tab
 
 Setup:
 - Settings → Pages → Source: GitHub Actions
