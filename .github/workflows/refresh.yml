@@ -1,0 +1,50 @@
+name: Refresh dashboard
+
+on:
+  schedule:
+    # Thu 10:00 UTC (6am ET): MNF and stat corrections final, before TNF
+    - cron: "0 10 * * 4"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+
+      - name: Pull ESPN data
+        run: uv run metrics.py
+        env:
+          ESPN_LEAGUE_ID: ${{ secrets.ESPN_LEAGUE_ID }}
+          ESPN_YEAR: ${{ vars.ESPN_YEAR }}
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+          ESPN_SWID: ${{ secrets.ESPN_SWID }}
+
+      - name: Build dashboard
+        run: uv run dashboard.py
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: output/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -29,16 +29,28 @@ Or run the steps individually:
 
 ```
 uv run --env-file .env metrics.py   # pull data from ESPN, write CSVs
-uv run dashboard.py                 # build docs/index.html from CSVs
+uv run dashboard.py                 # build output/site/index.html from CSVs
 ```
 
 - `metrics.py` pulls completed weeks only (current week is skipped)
 - `dashboard.py` reads only local CSVs, so re-run it freely without hitting ESPN
 - Re-run weekly to refresh
 
+### Auto refresh
+
+`.github/workflows/refresh.yml` rebuilds the dashboard and deploys it to GitHub Pages:
+- Every Thursday morning, on push to `main`, or on demand from the Actions tab
+
+Setup:
+- Settings → Pages → Source: GitHub Actions
+- Settings → Secrets and variables → Actions:
+  - Variables: `ESPN_YEAR`
+  - Secrets: `ESPN_LEAGUE_ID`, `ESPN_S2`, `ESPN_SWID`
+- `espn_s2` expires periodically; if the run fails, update the secret with a fresh cookie
+
 ## Outputs
 
-`docs/index.html`: interactive, self-contained dashboard; published via GitHub Pages
+`output/site/index.html`: interactive, self-contained dashboard; deployed to GitHub Pages by the workflow
 
 Local data in `output/` (gitignored):
 
