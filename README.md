@@ -50,7 +50,7 @@ Setup:
 
 ## Outputs
 
-`output/site/index.html`: interactive, self-contained dashboard; deployed to GitHub Pages by the workflow
+`output/site/index.html`: interactive, self-contained dashboard (League / Projections / Players tabs); deployed to GitHub Pages by the workflow
 
 Local data in `output/` (gitignored):
 
@@ -63,6 +63,8 @@ Local data in `output/` (gitignored):
 
 ## Metrics
 
+- **Weekly recap**: latest week's awards (top/low score, closest game, blowout, luckiest win, toughest loss, player of the week, bench blunder) and scoreboard
+- **Power rankings**: 0-100 score = 50% all-play win % + 30% all-play win % over the last 3 weeks + 20% actual win %; arrows show rank change since last week
 - **± vs projection**: actual minus ESPN projected points (starters, bench, total)
 - **Expected wins / luck**: expected wins = wins your score would earn vs every team, every week (all-play); luck = actual wins − expected wins
 - **vs ESPN lineup**: actual starter points minus what ESPN's highest-projected lineup would have scored

@@ -70,7 +70,32 @@ def season_teams(tw: pd.DataFrame) -> pd.DataFrame:
         s[col] = g.result.apply(lambda r: (r == res).sum())
     s["luck"] = s.wins + 0.5 * s.ties - s.exp_wins
     s["efficiency"] = s.starters_actual / s.optimal
+
+    last = tw.week.max()
+    s["power"] = power_scores(tw, last)
+    s["power_rank"] = s.power.rank(ascending=False, method="first")
+    if last > 1:
+        prev = power_scores(tw, last - 1)
+        s["power_rank_prev"] = prev.rank(ascending=False, method="first")
+    s["form"] = tw.sort_values("week").groupby("team").result.apply(lambda r: "".join(r.tail(3)))
     return s.rename(columns={"score": "pf", "opp_score": "pa"}).reset_index()
+
+
+def power_scores(tw: pd.DataFrame, through: int) -> pd.Series:
+    """0-100 per team through `through` week.
+
+    - 50% season all-play win %
+    - 30% all-play win % over the last 3 weeks (recent form)
+    - 20% actual win %
+    """
+    tw = tw[tw.week <= through]
+
+    def allplay_pct(df):
+        g = df.groupby("team")[["allplay_wins", "allplay_losses"]].sum()
+        return g.allplay_wins / (g.allplay_wins + g.allplay_losses)
+
+    win_pct = tw.groupby("team").result.apply(lambda r: ((r == "W") + 0.5 * (r == "T")).mean())
+    return 100 * (0.5 * allplay_pct(tw) + 0.3 * allplay_pct(tw[tw.week > through - 3]) + 0.2 * win_pct)
 
 
 def season_players(players: pd.DataFrame) -> pd.DataFrame:
@@ -93,6 +118,13 @@ def season_players(players: pd.DataFrame) -> pd.DataFrame:
     return s.fillna(0).reset_index()
 
 
+def top_starters(players: pd.DataFrame) -> pd.DataFrame:
+    """Highest-scoring starter each week."""
+    started = players[players.group == "starters"]
+    top = started.loc[started.groupby("week").actual.idxmax()]
+    return top[["week", "player", "position", "team", "projected", "actual"]]
+
+
 def main():
     players = pd.read_csv(OUT / "players.csv")
     weekly = pd.read_csv(OUT / "weekly.csv")
@@ -105,6 +137,7 @@ def main():
         "teams": season_teams(tw).round(3).to_dict("records"),
         "weeks": tw.round(3).to_dict("records"),
         "players": season_players(players).round(2).to_dict("records"),
+        "top_starters": top_starters(players).round(2).to_dict("records"),
     }
 
     payload = json.dumps(data).replace("</", "<\\/")
