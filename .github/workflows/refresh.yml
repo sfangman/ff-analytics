@@ -1,0 +1,35 @@
+name: Refresh dashboard
+
+on:
+  schedule:
+    # Wed 14:00 UTC: after MNF and once ESPN has advanced to the next week
+    - cron: "0 14 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+
+      - name: Pull ESPN data
+        run: uv run metrics.py
+        env:
+          ESPN_LEAGUE_ID: ${{ vars.ESPN_LEAGUE_ID }}
+          ESPN_YEAR: ${{ vars.ESPN_YEAR }}
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+          ESPN_SWID: ${{ secrets.ESPN_SWID }}
+
+      - name: Build dashboard
+        run: uv run dashboard.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          git diff --cached --quiet || { git commit -m "Refresh dashboard"; git push; }

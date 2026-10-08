@@ -36,6 +36,15 @@ uv run dashboard.py                 # build docs/index.html from CSVs
 - `dashboard.py` reads only local CSVs, so re-run it freely without hitting ESPN
 - Re-run weekly to refresh
 
+### Auto refresh
+
+`.github/workflows/refresh.yml` rebuilds and commits `docs/index.html` every Wednesday (or on demand from the Actions tab).
+
+Setup (Settings → Secrets and variables → Actions):
+- Variables: `ESPN_LEAGUE_ID`, `ESPN_YEAR`
+- Secrets: `ESPN_S2`, `ESPN_SWID`
+- `espn_s2` expires periodically; if the run fails, update the secret with a fresh cookie
+
 ## Outputs
 
 `docs/index.html`: interactive, self-contained dashboard; published via GitHub Pages
