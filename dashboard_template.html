@@ -107,6 +107,7 @@
   tr.hl td { background: color-mix(in oklab, var(--pos) 10%, transparent); font-weight: 600; }
   .up { color: var(--up); } .down { color: var(--down); }
   .muted { color: var(--muted); }
+  td.trunc { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
   .scroll { overflow-x: auto; }
   .tall { max-height: 560px; overflow: auto; }
   .pos-pill { display: inline-block; min-width: 34px; padding: 1px 6px; border-radius: 6px; font-size: 11px;
@@ -146,10 +147,15 @@
   .meter i b { display: block; height: 100%; background: var(--pos); border-radius: 0 4px 4px 0; }
   .meter span { width: 34px; text-align: right; }
 
+  @media (max-width: 1100px) {
+    .grid { grid-template-columns: 1fr; }
+  }
   @media (max-width: 900px) {
     .kpis, .awards { grid-template-columns: 1fr 1fr; }
-    .grid { grid-template-columns: 1fr; }
     .games { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .filters { position: static; }  /* wraps to several rows; too tall to pin */
   }
 </style>
 </head>
@@ -245,19 +251,19 @@
       <div class="card">
         <h2>Boom: beat projections most</h2>
         <p class="card-sub">Points minus projection in weeks started, season to date</p>
-        <table id="boom"></table>
+        <div class="scroll"><table id="boom"></table></div>
       </div>
       <div class="card">
         <h2>Bust: furthest below projections</h2>
         <p class="card-sub">Points minus projection in weeks started, season to date</p>
-        <table id="bust"></table>
+        <div class="scroll"><table id="bust"></table></div>
       </div>
     </section>
 
     <section class="card full" style="margin-bottom:16px">
       <h2>All rostered players</h2>
       <p class="card-sub">Click a column to sort</p>
-      <div class="scroll tall"><table id="players"></table></div>
+      <div class="scroll tall"><table id="all-players"></table></div>
     </section>
   </div>
 
@@ -437,6 +443,7 @@ function sortableTable(table, cols, rows, sortState, rowTeam) {
         const v = c.fmt ? c.fmt(r) : r[c.key];
         const td = h('td', { className: (c.left ? 'l ' : '') + (c.cls ? c.cls(r) : '') });
         if (v instanceof Node) td.append(v); else td.textContent = v;
+        if (td.classList.contains('trunc')) td.title = v;
         tr.append(td);
       }
       return tr;
@@ -476,7 +483,7 @@ function leaderboards() {
   const cols = [
     { key: 'player', label: 'Player', left: true },
     { key: 'position', label: 'Pos', left: true, fmt: posPill },
-    { key: 'team', label: 'Fantasy team', left: true, cls: () => 'muted' },
+    { key: 'team', label: 'Fantasy team', left: true, cls: () => 'muted trunc' },
     { key: 'started', label: 'Started' },
     { key: 'started_projected', label: 'Proj', fmt: r => fix(r.started_projected) },
     { key: 'started_actual', label: 'Actual', fmt: r => fix(r.started_actual) },
@@ -489,7 +496,7 @@ function leaderboards() {
 
 const playerSort = { key: 'diff', dir: -1 };
 function playerTable() {
-  sortableTable(document.getElementById('players'), [
+  sortableTable(document.getElementById('all-players'), [
     { key: 'player', label: 'Player', left: true },
     { key: 'position', label: 'Pos', left: true, fmt: posPill },
     { key: 'nfl', label: 'NFL', left: true, cls: () => 'muted' },

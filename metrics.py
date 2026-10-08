@@ -65,7 +65,8 @@ def main():
     matchups = pd.DataFrame([m for _, ms in results for m in ms])
 
     weekly = players.pivot_table(
-        index=["week", "team"], columns="group", values=["projected", "actual"], aggfunc="sum"
+        index=["week", "team"], columns="group", values=["projected", "actual"], aggfunc="sum",
+        fill_value=0,  # e.g. a team with an empty bench
     )
     weekly.columns = [f"{grp}_{val}" for val, grp in weekly.columns]
     for grp in ("starters", "bench"):
