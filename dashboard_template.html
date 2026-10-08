@@ -43,7 +43,11 @@
   h2 { margin: 0; font-size: 15px; font-weight: 600; }
   .card-sub { margin: 2px 0 12px; color: var(--ink2); font-size: 13px; }
 
-  .filters { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 20px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 0 -24px 8px; padding: 10px 24px;
+             position: sticky; top: 0; z-index: 5; border-bottom: 1px solid transparent;
+             background: color-mix(in oklab, var(--page) 85%, transparent); backdrop-filter: blur(10px); }
+  .section-label { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+                   margin: 20px 0 10px; }
   .filters label { display: flex; align-items: center; gap: 8px; color: var(--ink2); font-size: 13px; }
   select, .seg button, .ghost { font: inherit; color: var(--ink); background: var(--surface);
          border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
@@ -51,11 +55,12 @@
   .seg button { border: 0; border-radius: 0; cursor: pointer; color: var(--ink2); }
   .seg button + button { border-left: 1px solid var(--border); }
   .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
-  .ghost { cursor: pointer; }
+  .ghost { cursor: pointer; font-size: 16px; line-height: 1; padding: 7px 9px; }
 
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; min-width: 0; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; min-width: 0;
+          box-shadow: 0 1px 2px rgba(0,0,0,.04); }
   .full { grid-column: 1 / -1; }
   .tile .label { color: var(--ink2); font-size: 13px; }
   .tile .value { font-size: 30px; font-weight: 650; margin: 4px 0 2px; }
@@ -90,6 +95,7 @@
   th[aria-sort="descending"]::after { content: " ↓"; }
   th[aria-sort="ascending"]::after { content: " ↑"; }
   td { border-bottom: 1px solid var(--grid); }
+  tbody tr:hover td { background: color-mix(in oklab, var(--ink) 4%, transparent); }
   tr.hl td { background: color-mix(in oklab, var(--pos) 10%, transparent); font-weight: 600; }
   .up { color: var(--good); } .down { color: var(--bad); }
   .muted { color: var(--muted); }
@@ -109,9 +115,35 @@
   .tip-row { display: flex; justify-content: space-between; gap: 16px; }
   .tip-row strong { order: 2; font-variant-numeric: tabular-nums; }
 
+  .awards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .award { background: var(--page); border: 1px solid transparent; border-radius: 10px; padding: 12px 14px; min-width: 0; }
+  .award.hl { border-color: var(--pos); }
+  .award .label { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .award .value { font-size: 22px; font-weight: 650; margin: 2px 0; }
+  .award .who { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .award .note { color: var(--ink2); font-size: 12px; }
+  .sub-h { margin: 18px 0 10px; }
+  .games { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .game { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-variant-numeric: tabular-nums; }
+  .game.hl { border-color: var(--pos); }
+  .side { display: flex; justify-content: space-between; gap: 12px; color: var(--ink2); padding: 2px 0; }
+  .side span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side.win { color: var(--ink); font-weight: 600; }
+
+  .move { font-size: 12px; font-weight: 600; }
+  .form { display: inline-flex; gap: 3px; }
+  .form b { width: 18px; height: 18px; border-radius: 4px; display: inline-grid; place-items: center; font-size: 11px;
+            background: var(--mid); color: var(--ink2); }
+  .form b.W { background: color-mix(in oklab, var(--good) 18%, var(--surface)); color: var(--good); }
+  .meter { display: inline-flex; align-items: center; gap: 8px; width: 100%; min-width: 160px; }
+  .meter i { flex: 1; height: 8px; background: var(--mid); border-radius: 4px; overflow: hidden; }
+  .meter i b { display: block; height: 100%; background: var(--pos); border-radius: 0 4px 4px 0; }
+  .meter span { width: 34px; text-align: right; }
+
   @media (max-width: 900px) {
-    .kpis { grid-template-columns: 1fr 1fr; }
+    .kpis, .awards { grid-template-columns: 1fr 1fr; }
     .grid { grid-template-columns: 1fr; }
+    .games { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -123,7 +155,7 @@
       <h1 id="title"></h1>
       <div class="sub" id="subtitle"></div>
     </div>
-    <button class="ghost" id="theme" type="button">Toggle theme</button>
+    <button class="ghost" id="theme" type="button" aria-label="Toggle theme" title="Toggle theme">◐</button>
   </header>
 
   <div class="filters">
@@ -135,6 +167,22 @@
     <label>Highlight team <select id="team"><option value="">All teams</option></select></label>
     <label>Position <select id="pos"><option value="">All</option></select></label>
   </div>
+
+  <div class="section-label" id="week-label"></div>
+  <section class="card full">
+    <h2>Recap</h2>
+    <p class="card-sub">Awards and final scores</p>
+    <div class="awards" id="awards"></div>
+    <h2 class="sub-h">Scoreboard</h2>
+    <div class="games" id="games"></div>
+  </section>
+
+  <div class="section-label">Season to date</div>
+  <section class="card full" style="margin-bottom:16px">
+    <h2>Power rankings</h2>
+    <p class="card-sub">Power score (0–100) = 50% all-play win % + 30% all-play win % over the last 3 weeks + 20% actual win %. Arrows show the move since last week.</p>
+    <div class="scroll"><table id="power"></table></div>
+  </section>
 
   <section class="kpis" id="kpis"></section>
 
@@ -436,6 +484,81 @@ function playerTable() {
   ], filteredPlayers(), playerSort, r => r.team);
 }
 
+// ---------- weekly recap ----------
+const ordinal = n => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+
+function recap() {
+  const wk = D.meta.weeks, ws = D.weeks.filter(w => w.week === wk), n = ws.length;
+  const top = (rows, f, dir = 1) => [...rows].sort((a, b) => (f(b) - f(a)) * dir)[0];
+  const by = (f, dir = 1) => top(ws, f, dir);
+  const margin = w => Math.abs(w.score - w.opp_score);
+  // One row per game (winner's side; either side of a tie)
+  const games = ws.filter(w => w.result === 'W' || (w.result === 'T' && w.team < w.opponent));
+  const scoreRank = w => ordinal(Math.round(n - w.allplay_wins));  // 1 = highest score that week
+
+  const high = by(w => w.score), low = by(w => w.score, -1);
+  const close = top(games, margin, -1), blowout = top(games, margin);
+  const lucky = top(ws.filter(w => w.result === 'W'), w => w.allplay_wins, -1);
+  const unlucky = top(ws.filter(w => w.result === 'L'), w => w.allplay_wins);
+  const blunder = by(w => w.bench_left);
+  const mvp = D.top_starters.find(p => p.week === wk);
+
+  const award = (label, value, who, note, teams) =>
+    h('div', { className: 'award' + (state.team && teams.includes(state.team) ? ' hl' : '') },
+      h('div', { className: 'label', textContent: label }),
+      h('div', { className: 'value', textContent: value }),
+      h('div', { className: 'who', textContent: who, title: who }),
+      h('div', { className: 'note', textContent: note }));
+  const vs = w => `${w.result} vs ${w.opponent}`;
+  const over = w => `Over ${w.opponent}, ${fix(w.score)}–${fix(w.opp_score)}`;
+
+  document.getElementById('week-label').textContent = `Week ${wk}`;
+  document.getElementById('awards').replaceChildren(
+    award('Top score', fix(high.score), high.team, vs(high), [high.team]),
+    award('Low score', fix(low.score), low.team, vs(low), [low.team]),
+    award('Closest game', fix(close.score - close.opp_score) + ' pts', close.team, over(close), [close.team, close.opponent]),
+    award('Biggest blowout', fix(blowout.score - blowout.opp_score) + ' pts', blowout.team, over(blowout), [blowout.team, blowout.opponent]),
+    award('Luckiest win', fix(lucky.score), lucky.team, `Won with the ${scoreRank(lucky)}-highest score`, [lucky.team]),
+    award('Toughest loss', fix(unlucky.score), unlucky.team, `Lost with the ${scoreRank(unlucky)}-highest score`, [unlucky.team]),
+    award('Player of the week', fix(mvp.actual), mvp.player, `${mvp.position} · ${mvp.team} · ${fix(mvp.projected)} proj`, [mvp.team]),
+    award('Bench blunder', fix(blunder.bench_left) + ' pts', blunder.team, `Left on the bench (best lineup: ${fix(blunder.optimal)})`, [blunder.team]),
+  );
+
+  const side = (team, score, win) =>
+    h('div', { className: 'side' + (win ? ' win' : '') }, h('span', { textContent: team, title: team }), h('strong', { textContent: fix(score) }));
+  document.getElementById('games').replaceChildren(...[...games].sort((a, b) => b.score - a.score).map(g =>
+    h('div', { className: 'game' + ([g.team, g.opponent].includes(state.team) ? ' hl' : '') },
+      side(g.team, g.score, g.result === 'W'), side(g.opponent, g.opp_score, false))));
+}
+
+// ---------- power rankings ----------
+function powerRankings() {
+  const rows = [...D.teams].sort((a, b) => a.power_rank - b.power_rank);
+  const move = t => {
+    if (t.power_rank_prev == null) return '';
+    const d = t.power_rank_prev - t.power_rank;
+    return h('span', { className: 'move ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'muted'), textContent: d > 0 ? '▲' + d : d < 0 ? '▼' + -d : '–' });
+  };
+  const form = t => h('span', { className: 'form', title: 'Last 3 results, oldest first' },
+    ...[...t.form].map(r => h('b', { className: r, textContent: r })));
+  const meter = t => h('span', { className: 'meter' },
+    h('i', {}, Object.assign(h('b'), { style: `width:${Math.max(0, t.power)}%` })), h('span', { textContent: fix(t.power) }));
+  const head = h('thead', {}, h('tr', {}, ...[
+    ['#', 'l'], ['', 'l'], ['Team', 'l'], ['Record', ''], ['Last 3', ''], ['PF', ''], ['All-play', ''], ['Power', 'l'],
+  ].map(([label, cls]) => h('th', { textContent: label, className: cls, style: 'cursor:default' }))));
+  const body = h('tbody', {}, ...rows.map(t => {
+    const tr = h('tr', { className: state.team === t.team ? 'hl' : '' });
+    for (const [v, cls] of [[t.power_rank, 'l'], [move(t), 'l'], [t.team, 'l'], [record(t), ''], [form(t), ''],
+                            [fix(t.pf), ''], [allplay(t), ''], [meter(t), 'l']]) {
+      const td = h('td', { className: cls });
+      td.append(v);
+      tr.append(td);
+    }
+    return tr;
+  }));
+  document.getElementById('power').replaceChildren(head, body);
+}
+
 // ---------- KPI tiles ----------
 function kpis() {
   const by = (key, dir = 1) => [...D.teams].sort((a, b) => (b[key] - a[key]) * dir)[0];
@@ -467,6 +590,8 @@ function render() {
   divergingBars(document.getElementById('calls'),
     [...D.teams].sort((a, b) => b.lineup_vs_espn - a.lineup_vs_espn).map(t => ({ team: t.team, value: t.lineup_vs_espn, t })),
     r => [r.team, [['Your starters', fix(r.t.starters_actual)], ["ESPN's lineup", fix(r.t.espn_lineup)], ['Best possible', fix(r.t.optimal)], ['Difference', sign(r.value)]]]);
+  recap();
+  powerRankings();
   standings();
   leaderboards();
   playerTable();
