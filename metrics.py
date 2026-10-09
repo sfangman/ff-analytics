@@ -86,7 +86,7 @@ def main():
     weekly.to_csv("output/weekly.csv", index=False)
     season.to_csv("output/season.csv")
     matchups.to_csv("output/matchups.csv", index=False)
-    with open("output/meta.json", "w") as f:
+    with open("output/meta.json", "w", encoding="utf-8") as f:
         json.dump({"league": league.settings.name, "year": league.year,
                    "weeks": league.current_week - 1}, f)
 

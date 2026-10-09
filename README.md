@@ -21,8 +21,11 @@ Requires [uv](https://docs.astral.sh/uv/).
 
 ## Usage
 
+Pull data and rebuild the dashboard in one step:
+
 ```
-./refresh.sh   # pull data and rebuild the dashboard
+./refresh.sh     # macOS / Linux (bash)
+.\refresh.ps1    # Windows (PowerShell)
 ```
 
 Or run the steps individually:
@@ -81,3 +84,4 @@ Notes:
 - `dashboard.py`: derived metrics (luck, lineups) and HTML build
 - `dashboard_template.html`: dashboard layout, styles, and charts
 - `refresh.sh`: weekly refresh (data pull + dashboard build)
+- `refresh.ps1`: same refresh for Windows (PowerShell)
