@@ -131,7 +131,7 @@ def main():
     players = pd.read_csv(OUT / "players.csv")
     weekly = pd.read_csv(OUT / "weekly.csv")
     matchups = pd.read_csv(OUT / "matchups.csv")
-    meta = json.loads((OUT / "meta.json").read_text())
+    meta = json.loads((OUT / "meta.json").read_text(encoding="utf-8"))
 
     tw = team_weeks(weekly, matchups, lineup_metrics(players))
     data = {
@@ -143,10 +143,10 @@ def main():
     }
 
     payload = json.dumps(data).replace("</", "<\\/")
-    html = Path("dashboard_template.html").read_text().replace("__DATA__", payload)
+    html = Path("dashboard_template.html").read_text(encoding="utf-8").replace("__DATA__", payload)
     out = SITE / "index.html"
-    SITE.mkdir(exist_ok=True)
-    out.write_text(html)
+    SITE.mkdir(parents=True, exist_ok=True)
+    out.write_text(html, encoding="utf-8")
     print(f"Wrote {out}")
 
 
