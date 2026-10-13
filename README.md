@@ -65,6 +65,14 @@ Local data in `output/` (gitignored):
 | `season.csv` | Team season totals of `weekly.csv` |
 | `matchups.csv` | Weekly matchup scores |
 
+## Top moves
+
+Separate from the dashboard: run `/top-moves` in [Claude Code](https://claude.com/claude-code) for ranked waiver, buy-low, sell-high, and trade ideas.
+
+- Pulls data via `uv run --env-file .env moves.py` → `output/moves/`
+- My team = team owned by `ESPN_SWID`; override with `ESPN_TEAM_ID` in `.env`
+- Analysis steps live in `.claude/skills/top-moves/SKILL.md`
+
 ## Metrics
 
 - **Weekly recap**: latest week's awards (top/low score, closest game, blowout, luckiest win, toughest loss, player of the week, bench blunder) and scoreboard
@@ -86,3 +94,4 @@ Notes:
 - `dashboard_template.html`: dashboard layout, styles, and charts
 - `refresh.sh`: weekly refresh (data pull + dashboard build)
 - `refresh.ps1`: same refresh for Windows (PowerShell)
+- `moves.py`: data pull for `/top-moves` (rosters, free agents, schedules)
