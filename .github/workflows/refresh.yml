@@ -2,8 +2,8 @@ name: Refresh dashboard
 
 on:
   schedule:
-    # Thu 10:00 UTC (6am ET): MNF and stat corrections final, before TNF
-    - cron: "0 10 * * 4"
+    # Daily 10:17 UTC (~6am ET); off the top of the hour, when GitHub's scheduler is busiest
+    - cron: "17 10 * * *"
   push:
     branches: [main]
   workflow_dispatch:
