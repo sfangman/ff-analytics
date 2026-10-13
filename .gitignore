@@ -1,7 +1,6 @@
 .env
 output/
-.claude/
+.claude/settings.local.json
 .venv/
 __pycache__/
 .DS_Store
-moves.py
