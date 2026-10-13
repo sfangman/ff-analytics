@@ -8,6 +8,7 @@ Env vars:
 
 import json
 import os
+from datetime import datetime, timezone
 
 import pandas as pd
 from espn_api.football import League
@@ -88,7 +89,8 @@ def main():
     matchups.to_csv("output/matchups.csv", index=False)
     with open("output/meta.json", "w", encoding="utf-8") as f:
         json.dump({"league": league.settings.name, "year": league.year,
-                   "weeks": league.current_week - 1}, f)
+                   "weeks": league.current_week - 1,
+                   "updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
 
     pd.set_option("display.width", 200, "display.max_columns", None)
     print(f"Weeks 1-{league.current_week - 1}\n")

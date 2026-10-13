@@ -42,7 +42,8 @@ uv run dashboard.py                 # build output/site/index.html from CSVs
 ### Auto refresh
 
 `.github/workflows/refresh.yml` rebuilds the dashboard and deploys it to GitHub Pages:
-- Every Thursday morning, on push to `main`, or on demand from the Actions tab
+- Daily (~6am ET), on push to `main`, or on demand from the Actions tab
+- GitHub disables scheduled runs after 60 days without repo activity; re-enable from the Actions tab
 
 Setup:
 - Settings → Pages → Source: GitHub Actions
