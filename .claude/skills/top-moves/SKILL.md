@@ -46,6 +46,9 @@ Weigh carefully:
 - Check `median` / `weeks` before calling buy/sell high; one big week can drive `avg` and `diff`
 - `diff` measures luck vs ESPN's expectation, not talent; pair it with `espn_avg`, usage, and role
 - Respect roster slots and positional needs; a trade should make my starting lineup better
+- Handcuffs: keep low-projected RBs who back up elite starters (injury stashes); pick another drop or call out the tradeoff
+- Trade value is capped by free agents; a player is worth little if a similar FA is available
+- Waivers: claims can't share the same drop; ESPN adds claims to the bench, not IR (an open IR slot doesn't free a bench spot)
 
 ## 3. Report
 
