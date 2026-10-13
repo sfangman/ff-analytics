@@ -98,6 +98,32 @@ def power_scores(tw: pd.DataFrame, through: int) -> pd.Series:
     return 100 * (0.5 * allplay_pct(tw) + 0.3 * allplay_pct(tw[tw.week > through - 3]) + 0.2 * win_pct)
 
 
+def power_history(tw: pd.DataFrame) -> list[dict]:
+    """Per-team power score, rank, and record through each week (for browsing past recaps)."""
+    out, prev_ranks = [], {}
+    for through in sorted(tw.week.unique()):
+        sub = tw[tw.week <= through]
+        power = power_scores(tw, through)
+        rank = power.rank(ascending=False, method="first")
+        for team, g in sub.groupby("team"):
+            out.append({
+                "week": int(through),
+                "team": team,
+                "rank": int(rank[team]),
+                "rank_prev": prev_ranks.get(team),
+                "power": round(float(power[team]), 1),
+                "wins": int((g.result == "W").sum()),
+                "losses": int((g.result == "L").sum()),
+                "ties": int((g.result == "T").sum()),
+                "pf": round(float(g.score.sum()), 1),
+                "allplay_wins": float(g.allplay_wins.sum()),
+                "allplay_losses": float(g.allplay_losses.sum()),
+                "form": "".join(g.sort_values("week").result.tail(3)),
+            })
+        prev_ranks = {team: int(rank[team]) for team in rank.index}
+    return out
+
+
 def season_players(players: pd.DataFrame) -> pd.DataFrame:
     players = players.sort_values("week")
     started = players[players.group == "starters"]
@@ -137,6 +163,7 @@ def main():
     data = {
         "meta": meta,
         "teams": season_teams(tw).round(3).to_dict("records"),
+        "power_by_week": power_history(tw),
         "weeks": tw.round(3).to_dict("records"),
         "players": season_players(players).round(2).to_dict("records"),
         "top_starters": top_starters(players).round(2).to_dict("records"),
