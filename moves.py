@@ -44,7 +44,7 @@ def weekly_points(league, ids, weeks) -> pd.DataFrame:
             }
             if 1 in pts:  # no projection = bye
                 rows.append({"id": p["id"], "week": w, "actual": pts.get(0, 0), "projected": pts[1]})
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=["id", "week", "actual", "projected"])
 
 
 def upcoming(player, schedule, ratings, next_week, last_week) -> dict:
@@ -133,6 +133,7 @@ def main():
             **upcoming(p, schedule, ratings, next_week, last_week),
         })
     players = pd.DataFrame(rows).join(next_proj, on="id").join(totals, on="id").drop(columns="id").round(2)
+    players["next_proj"] = players.next_proj.fillna(0)
     players["gp"] = players.gp.fillna(0).astype(int)
 
     teams = pd.DataFrame([{

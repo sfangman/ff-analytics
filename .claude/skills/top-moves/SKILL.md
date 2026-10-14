@@ -23,7 +23,7 @@ Writes `output/moves/`:
 `players.csv` columns:
 - `pts`, `proj`, `diff`: actual vs ESPN weekly projections, completed weeks only
 - `diff_recent`: `diff` over the last 3 completed weeks
-- `avg`: actual pts/game; `espn_avg`: ESPN's rest-of-season projected pts/game
+- `avg`: actual pts/game; `espn_avg`: ESPN's season projected pts/game (updated in-season)
 - `next_proj`: ESPN projection for `next_week` (0 = on bye or expected out; check `bye` / `status`)
 - `median`: median actual pts/game; `weeks`: actual pts by week as `week:pts`
 - `next_games`: next 4 games as `week:OPP(rank)`; rank = opponent vs position, 1 = toughest, 32 = easiest
