@@ -44,7 +44,7 @@ def weekly_points(league, ids, weeks) -> pd.DataFrame:
             }
             if 1 in pts:  # no projection = bye
                 rows.append({"id": p["id"], "week": w, "actual": pts.get(0, 0), "projected": pts[1]})
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=["id", "week", "actual", "projected"])
 
 
 def upcoming(player, schedule, ratings, next_week, last_week) -> dict:
@@ -113,6 +113,7 @@ def main():
     future_share = games.groupby("week").future.mean()
     next_week = int(future_share[future_share > 0.5].index.min())  # first week mostly unplayed
     ratings = league._get_positional_ratings(league.current_week)
+    next_proj = weekly_points(league, ids, [next_week]).set_index("id").projected.rename("next_proj")
 
     rows = []
     for team, p in pool:
@@ -131,7 +132,8 @@ def main():
             "espn_avg": p.projected_avg_points,
             **upcoming(p, schedule, ratings, next_week, last_week),
         })
-    players = pd.DataFrame(rows).join(totals, on="id").drop(columns="id").round(2)
+    players = pd.DataFrame(rows).join(next_proj, on="id").join(totals, on="id").drop(columns="id").round(2)
+    players["next_proj"] = players.next_proj.fillna(0)
     players["gp"] = players.gp.fillna(0).astype(int)
 
     teams = pd.DataFrame([{

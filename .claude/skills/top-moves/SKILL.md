@@ -23,7 +23,8 @@ Writes `output/moves/`:
 `players.csv` columns:
 - `pts`, `proj`, `diff`: actual vs ESPN weekly projections, completed weeks only
 - `diff_recent`: `diff` over the last 3 completed weeks
-- `avg`: actual pts/game; `espn_avg`: ESPN's current projected pts/game
+- `avg`: actual pts/game; `espn_avg`: ESPN's season projected pts/game (updated in-season)
+- `next_proj`: ESPN projection for `next_week` (0 = on bye or expected out; check `bye` / `status`)
 - `median`: median actual pts/game; `weeks`: actual pts by week as `week:pts`
 - `next_games`: next 4 games as `week:OPP(rank)`; rank = opponent vs position, 1 = toughest, 32 = easiest
 - `next_opp_rank`: avg of those ranks (higher = easier)
@@ -45,6 +46,7 @@ Weigh carefully:
 - Early-season samples are small; don't overreact to one week
 - Check `median` / `weeks` before calling buy/sell high; one big week can drive `avg` and `diff`
 - `diff` measures luck vs ESPN's expectation, not talent; pair it with `espn_avg`, usage, and role
+- Use both projections: `next_proj` for this week's lineup and short-term fill-ins; `espn_avg` for trades, stashes, and drops
 - Respect roster slots and positional needs; a trade should make my starting lineup better
 - Handcuffs: keep low-projected RBs who back up elite starters (injury stashes); pick another drop or call out the tradeoff
 - Trade value is capped by free agents; a player is worth little if a similar FA is available
