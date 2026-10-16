@@ -30,6 +30,7 @@ Writes `output/moves/`:
 - `next_opp_rank`: avg of those ranks (higher = easier)
 - `bye`: next bye week
 - `own_pct`, `start_pct`: ESPN-wide ownership / start rates
+- `waiver_clears`: date an unrostered player clears waivers; blank = free agent (immediate add)
 
 ## 2. Analyze
 
@@ -50,7 +51,7 @@ Weigh carefully:
 - Respect roster slots and positional needs; a trade should make my starting lineup better
 - Handcuffs: keep low-projected RBs who back up elite starters (injury stashes); pick another drop or call out the tradeoff
 - Trade value is capped by free agents; a player is worth little if a similar FA is available
-- Waivers: claims can't share the same drop; ESPN adds claims to the bench, not IR (an open IR slot doesn't free a bench spot)
+- Waivers: free agents are guaranteed immediate adds; waiver claims depend on my `waiver_rank` (low odds when last); claims can't share the same drop; ESPN adds claims to the bench, not IR (an open IR slot doesn't free a bench spot)
 
 ## 3. Report
 

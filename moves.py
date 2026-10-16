@@ -47,6 +47,23 @@ def weekly_points(league, ids, weeks) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["id", "week", "actual", "projected"])
 
 
+def waiver_clears(league) -> dict:
+    """Date each unrostered player on waivers clears; free agents (immediate adds) are absent."""
+    f = {"players": {
+        "filterStatus": {"value": ["WAIVERS"]},
+        "limit": 300,
+        "sortPercOwned": {"sortPriority": 1, "sortAsc": False},
+    }}
+    data = league.espn_request.league_get(
+        params={"view": "kona_player_info", "scoringPeriodId": league.current_week},
+        headers={"x-fantasy-filter": json.dumps(f)},
+    )
+    return {
+        p["id"]: datetime.fromtimestamp(p["waiverProcessDate"] / 1000).date().isoformat()
+        for p in data["players"] if p.get("waiverProcessDate")
+    }
+
+
 def upcoming(player, schedule, ratings, next_week, last_week) -> dict:
     """Next opponents with ESPN opponent rank vs position (1 = toughest, 32 = easiest) and next bye."""
     team_id = next((k for k, v in PRO_TEAM_MAP.items() if v == player.proTeam), None)
@@ -114,6 +131,7 @@ def main():
     next_week = int(future_share[future_share > 0.5].index.min())  # first week mostly unplayed
     ratings = league._get_positional_ratings(league.current_week)
     next_proj = weekly_points(league, ids, [next_week]).set_index("id").projected.rename("next_proj")
+    clears = waiver_clears(league)
 
     rows = []
     for team, p in pool:
@@ -125,6 +143,7 @@ def main():
             "pos": p.position,
             "nfl": p.proTeam,
             "slot": p.lineupSlot or "FA",
+            "waiver_clears": clears.get(p.playerId) if team == "FA" else None,
             "status": p.injuryStatus,
             "own_pct": p.percent_owned,
             "start_pct": p.percent_started,
