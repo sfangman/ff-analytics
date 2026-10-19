@@ -2,8 +2,9 @@ name: Refresh dashboard
 
 on:
   schedule:
-    # Daily 10:17 UTC (~6am ET); off the top of the hour, when GitHub's scheduler is busiest
-    - cron: "17 10 * * *"
+    # Daily 07:23 UTC (~1:23am MT / 3:23am ET); off the top of the hour, when GitHub's scheduler is busiest.
+    # Cron is UTC-only, so during MST this fires at 12:23am.
+    - cron: "23 7 * * *"
   push:
     branches: [main]
   workflow_dispatch:
