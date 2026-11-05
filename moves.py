@@ -115,9 +115,9 @@ def main():
     recent = weekly[weekly.week > league.current_week - 1 - RECENT_WEEKS]
     totals = weekly.groupby("id")[["actual", "projected", "diff"]].sum().rename(
         columns={"actual": "pts", "projected": "proj"})
-    totals["gp"] = weekly[weekly.projected > 0].groupby("id").size()
+    played = weekly[(weekly.projected > 0) | (weekly.actual != 0)]  # include games ESPN projected 0
+    totals["gp"] = played.groupby("id").size()
     totals["diff_recent"] = recent.groupby("id")["diff"].sum()
-    played = weekly[weekly.projected > 0]
     totals["median"] = played.groupby("id").actual.median()
     totals["weeks"] = (played.week.astype(str) + ":" + played.actual.round(1).astype(str)).groupby(played.id).agg(" ".join)
 
