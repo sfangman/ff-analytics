@@ -871,8 +871,9 @@ function renderPower() {
 }
 
 // ---------- playoffs ----------
-// Show near-certain odds as >99% / <1% rather than a rounded 100% / 0%
-const oddsPct = v => (v >= 1 ? '100%' : v >= 0.995 ? '>99%' : v <= 0 ? '0%' : v < 0.005 ? '<1%' : pct(v));
+// Sims can't prove a clinch: cap at >99% / <1% until the regular season is over
+const seasonOver = D.meta.weeks >= D.meta.reg_season_weeks;
+const oddsPct = v => (seasonOver ? pct(v) : v >= 0.995 ? '>99%' : v < 0.005 ? '<1%' : pct(v));
 const teamsBy = Object.fromEntries(D.teams.map(t => [t.team, t]));
 const oddsBy = Object.fromEntries(D.odds.map(o => [o.team, o]));
 const abbrev = t => D.meta.abbrevs?.[t] || t;
