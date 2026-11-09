@@ -920,7 +920,7 @@ function scheduleGrid() {
       const o = teamsBy[opp], oo = oddsBy[opp];
       bindTip(td, () => [`${team} · Week ${wk}`, w
         ? [[`${w.result} vs ${opp}`, `${score(w.score)}–${score(w.opp_score)}`]]
-        : [[`vs ${opp}`, ''], ['Opp. record', record(o)], ['Opp. avg score', fix(o.pf / (o.wins + o.losses + o.ties))],
+        : [[`vs ${opp}`, ''], ['Opp. record', record(o)], ['Opp. avg score', fix(oo.avg)],
            ['Opp. playoff odds', oddsPct(oo.playoff_pct)]]]);
       return td;
     }))));
