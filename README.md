@@ -35,7 +35,8 @@ uv run --env-file .env metrics.py   # pull data from ESPN, write CSVs
 uv run dashboard.py                 # build output/site/index.html from CSVs
 ```
 
-- `metrics.py` pulls completed regular-season weeks only (current week and playoffs are skipped)
+- `metrics.py` pulls completed weeks through the playoffs (current week is skipped)
+- Season stats (standings, luck, power, odds, projections, players) use regular-season weeks only; weekly recaps include the playoffs
 - `dashboard.py` reads only local CSVs, so re-run it freely without hitting ESPN
 - Re-run weekly to refresh
 
@@ -63,7 +64,7 @@ Local data in `output/` (gitignored):
 | `players.csv` | Player × week: slot, projected, actual |
 | `weekly.csv` | Team × week: projected, actual, diff for starters / bench / total |
 | `season.csv` | Team season totals of `weekly.csv` |
-| `matchups.csv` | Weekly matchup scores |
+| `matchups.csv` | Weekly matchup scores and type (regular season, winners bracket, consolation) |
 | `schedule.csv` | Regular-season schedule (team × week opponent), including future weeks |
 
 ## Top moves
@@ -76,8 +77,9 @@ Separate from the dashboard: run `/top-moves` in [Claude Code](https://claude.co
 
 ## Metrics
 
-- **Weekly recap**: latest week's awards (top/low score, closest game, blowout, luckiest win, toughest loss, player of the week, bench blunder) and scoreboard
+- **Weekly recap**: latest week's awards (top/low score, closest game, blowout, luckiest win, toughest loss, player of the week, bench blunder) and scoreboard; playoff weeks tag bracket vs consolation games
 - **Power rankings**: 0-100 score = 60% all-play win % + 10% all-play win % over the last 3 weeks + 30% actual win %; arrows show rank change since last week
+- **Playoff bracket**: seeds and results once the regular season ends (6-team ESPN bracket, no reseeding)
 - **Playoff odds**: 10,000 simulations of the remaining regular season
   - Weekly score ~ normal(team's season average, league-wide SD)
   - Seeds by record, then points for (league tiebreaker); top 2 seeds get a bye
