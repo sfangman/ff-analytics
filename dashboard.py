@@ -76,9 +76,9 @@ def season_teams(tw: pd.DataFrame) -> pd.DataFrame:
 def power_scores(tw: pd.DataFrame, through: int) -> pd.Series:
     """0-100 per team through `through` week.
 
-    - 50% season all-play win %
-    - 30% all-play win % over the last 3 weeks (recent form)
-    - 20% actual win %
+    - 60% season all-play win %
+    - 10% all-play win % over the last 3 weeks (recent form)
+    - 30% actual win %
     """
     tw = tw[tw.week <= through]
 
@@ -87,7 +87,7 @@ def power_scores(tw: pd.DataFrame, through: int) -> pd.Series:
         return g.allplay_wins / (g.allplay_wins + g.allplay_losses)
 
     win_pct = tw.groupby("team").result.apply(lambda r: ((r == "W") + 0.5 * (r == "T")).mean())
-    return 100 * (0.5 * allplay_pct(tw) + 0.3 * allplay_pct(tw[tw.week > through - 3]) + 0.2 * win_pct)
+    return 100 * (0.6 * allplay_pct(tw) + 0.1 * allplay_pct(tw[tw.week > through - 3]) + 0.3 * win_pct)
 
 
 def power_history(tw: pd.DataFrame) -> list[dict]:
