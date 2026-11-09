@@ -288,7 +288,7 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
 
   <div data-page="playoffs">
     <section class="card full" id="bracket-card" style="margin:20px 0 0" hidden>
-      <h2>Playoff bracket</h2>
+      <h2>Playoff bracket <span class="chip" id="bracket-chip" hidden>Projected</span></h2>
       <p class="card-sub" id="bracket-sub"></p>
       <div class="scroll"><div class="bracket" id="bracket"></div></div>
     </section>
@@ -916,8 +916,10 @@ function scheduleGrid() {
 // ESPN 6-team bracket, no reseeding: 3v6 and 4v5, then 1 vs 4/5 winner and 2 vs 3/6 winner
 function bracket() {
   const card = document.getElementById('bracket-card');
-  card.hidden = regWeeks < REG || D.meta.playoff_teams !== 6;  // seeds lock after the regular season
+  card.hidden = D.meta.playoff_teams !== 6;
   if (card.hidden) return;
+  const projected = regWeeks < REG;  // seeds lock after the regular season
+  document.getElementById('bracket-chip').hidden = !projected;
   const seedOf = Object.fromEntries([...D.teams]
     .sort((a, b) => (b.wins + 0.5 * b.ties) - (a.wins + 0.5 * a.ties) || b.pf - a.pf)
     .map((t, i) => [t.team, i + 1]));
@@ -945,8 +947,9 @@ function bracket() {
   const round = (wk, ...games) => h('div', { className: 'round' },
     h('h3', { textContent: `${roundName(wk)} · Week ${wk}` }), h('div', { className: 'round-games' }, ...games));
 
-  document.getElementById('bracket-sub').textContent = champ
-    ? `Champion: ${champ}` : 'Seeds from final regular-season standings (record, then points for).';
+  document.getElementById('bracket-sub').textContent = champ ? `Champion: ${champ}`
+    : projected ? `Projected: if the season ended today (through Week ${regWeeks}). Seeds by record, then points for.`
+    : 'Seeds from final regular-season standings (record, then points for).';
   document.getElementById('bracket').replaceChildren(
     round(r1, bye(bySeed[1]), matchup(r1, qfB, []), matchup(r1, qfA, []), bye(bySeed[2])),
     round(r2, matchup(r2, sfA, ['', '4/5']), matchup(r2, sfB, ['', '3/6'])),
