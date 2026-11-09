@@ -37,6 +37,7 @@
   }
 
   * { box-sizing: border-box; }
+  html { scrollbar-gutter: stable; }  /* charts size to container width; keep it stable when the page scrollbar appears */
   body { margin: 0; background: var(--page); color: var(--ink);
          font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 1280px; margin: 0 auto; padding: 32px 24px 48px; }
@@ -54,8 +55,10 @@
              margin: 0 -24px 8px; padding: 10px 24px;
              position: sticky; top: 0; z-index: 5; border-bottom: 1px solid transparent;
              background: color-mix(in oklab, var(--page) 85%, transparent); backdrop-filter: blur(10px); }
-  .section-label { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  .section-label { display: block; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
                    margin: 20px 0 10px; }
+  .section-label select { margin-left: 6px; padding: 3px 8px; font-weight: 600; }
+  .sub .stale { color: var(--down); font-weight: 600; }
   .tabs { display: flex; gap: 4px; }
   .tabs button { font: inherit; font-weight: 600; color: var(--ink2); background: none; border: 1px solid transparent;
                  border-radius: 8px; padding: 6px 12px; cursor: pointer; }
@@ -71,7 +74,6 @@
   .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
   .ghost { cursor: pointer; font-size: 16px; line-height: 1; padding: 7px 9px; }
 
-  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; min-width: 0;
           box-shadow: var(--shadow); }
@@ -80,13 +82,8 @@
   .chip { display: inline-block; margin-left: 8px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
           letter-spacing: 0; background: var(--mid); color: var(--ink2); vertical-align: middle; }
   .full { grid-column: 1 / -1; }
-  .tile .label { color: var(--ink2); font-size: 13px; }
-  .tile .value { font-size: 30px; font-weight: 650; margin: 4px 0 2px; }
-  .tile .who { font-weight: 600; }
-  .tile .note { color: var(--muted); font-size: 12px; }
 
   svg { display: block; width: 100%; height: auto; overflow: visible; }
-  .chart-scroll svg { min-width: 680px; }
   svg text { fill: var(--ink2); font-size: 12px; font-variant-numeric: tabular-nums; }
   svg .lbl { fill: var(--ink); font-size: 13px; }
   svg .val { fill: var(--ink2); }
@@ -193,7 +190,7 @@
     .grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 900px) {
-    .kpis, .awards { grid-template-columns: 1fr 1fr; }
+    .awards { grid-template-columns: 1fr 1fr; }
     .games { grid-template-columns: 1fr; }
   }
   @media (max-width: 600px) {
@@ -215,6 +212,7 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
         <div class="eyebrow">Advanced analytics</div>
         <h1 id="title"></h1>
         <div class="sub" id="subtitle"></div>
+        <div class="sub" id="updated"></div>
       </div>
     </div>
     <button class="ghost" id="theme" type="button" aria-label="Toggle theme" title="Toggle theme">◐</button>
@@ -228,19 +226,13 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
       <button type="button" role="tab" data-tab="players">Players</button>
     </div>
     <div class="controls">
-      <label data-tabs="league">Week <select id="week"></select></label>
       <label>Team <select id="team"><option value="">All teams</option></select></label>
-      <div class="seg" id="dim" role="group" aria-label="Roster group" data-tabs="projections">
-        <button type="button" data-dim="starters" aria-pressed="true">Starters</button>
-        <button type="button" data-dim="bench" aria-pressed="false">Bench</button>
-        <button type="button" data-dim="total" aria-pressed="false">Total</button>
-      </div>
       <label data-tabs="players">Position <select id="pos"><option value="">All</option></select></label>
     </div>
   </nav>
 
   <div data-page="league">
-    <div class="section-label" id="week-label"></div>
+    <label class="section-label">Week <select id="week"></select></label>
     <section class="card full">
       <h2>Recap</h2>
       <p class="card-sub">Awards and final scores</p>
@@ -251,7 +243,7 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
 
     <section class="card full" style="margin:16px 0">
       <div class="card-head">
-        <h2>Power rankings <span class="chip" id="power-sub"></span></h2>
+        <h2>Power rankings</h2>
         <div class="controls">
           <div class="seg" id="power-metric" role="group" aria-label="Trend metric" hidden>
             <button type="button" data-metric="rank" aria-pressed="true">Rank</button>
@@ -280,7 +272,7 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
     </section>
 
     <section class="card full" style="margin-bottom:16px">
-      <h2>Standings &amp; advanced metrics</h2>
+      <h2>Standings</h2>
       <p class="card-sub">Click a column to sort</p>
       <div class="scroll"><table id="standings"></table></div>
     </section>
@@ -303,30 +295,22 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
 
   <div data-page="projections">
     <div class="section-label">Season to date</div>
-    <section class="kpis" id="kpis"></section>
-
     <section class="grid">
       <div class="card">
         <h2>Points vs ESPN projection</h2>
-        <p class="card-sub"><span class="dim-name">Starters</span>: actual minus projected, season to date</p>
-        <div id="bars"></div>
+        <p class="card-sub">Starters: actual minus projected, season to date</p>
+        <div class="chart-scroll" id="bars"></div>
       </div>
       <div class="card">
         <h2>Lineup calls vs ESPN</h2>
         <p class="card-sub">Your starters' points minus what ESPN's highest-projected lineup would have scored</p>
-        <div id="calls"></div>
+        <div class="chart-scroll" id="calls"></div>
       </div>
     </section>
 
     <section class="card full" style="margin-bottom:16px">
-      <h2>Lineup efficiency</h2>
-      <p class="card-sub">Your starters' points / best possible lineup in hindsight, season to date</p>
-      <div class="chart-scroll" id="efficiency"></div>
-    </section>
-
-    <section class="card full" style="margin-bottom:16px">
       <h2>Week by week</h2>
-      <p class="card-sub"><span class="dim-name">Starters</span>: actual minus projected each week. Hover a cell for the matchup.</p>
+      <p class="card-sub">Starters: actual minus projected each week. Hover a cell for the matchup.</p>
       <div class="chart-scroll" id="heat"></div>
     </section>
   </div>
@@ -360,14 +344,12 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
     <li>Playoff odds: 10,000 simulations of the remaining regular season; each team's weekly score is drawn from its season average with league-wide variance. Seeds by record, then points for.</li>
     <li>Power score (0–100) = 60% all-play win % + 10% all-play win % over the last 3 weeks + 30% actual win %. "Move" compares to the previous week.</li>
   </ul>
-  <footer id="updated"></footer>
 </main>
 <div id="tip" hidden></div>
 
 <script id="data" type="application/json">__DATA__</script>
 <script>
 const D = JSON.parse(document.getElementById('data').textContent);
-const DIM_NAMES = { starters: 'Starters', bench: 'Bench', total: 'Total' };
 const NS = 'http://www.w3.org/2000/svg';
 const LS_KEY = 'ff-dashboard';
 
@@ -376,21 +358,18 @@ const params = new URLSearchParams(location.search);
 const saved = (() => { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; } })();
 const pick = (key, def) => (params.has(key) ? params.get(key) : (saved[key] ?? def));
 const state = {
-  dim: pick('dim', 'starters'),
   team: pick('team', ''),
   pos: pick('pos', ''),
   week: Number(pick('week', D.meta.weeks)) || D.meta.weeks,
   pview: pick('pview', 'table'),
   pmetric: pick('pmetric', 'rank'),
 };
-if (!DIM_NAMES[state.dim]) state.dim = 'starters';
 if (state.week < 1 || state.week > D.meta.weeks) state.week = D.meta.weeks;
 if (state.pview !== 'table' && state.pview !== 'trend') state.pview = 'table';
 if (state.pmetric !== 'rank' && state.pmetric !== 'score') state.pmetric = 'rank';
 
 function syncState() {
   const p = new URLSearchParams();
-  if (state.dim !== 'starters') p.set('dim', state.dim);
   if (state.team) p.set('team', state.team);
   if (state.pos) p.set('pos', state.pos);
   if (state.week !== D.meta.weeks) p.set('week', String(state.week));
@@ -398,7 +377,7 @@ function syncState() {
   if (state.pmetric !== 'rank') p.set('pmetric', state.pmetric);
   const q = p.toString();
   history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
-  try { localStorage.setItem(LS_KEY, JSON.stringify({ dim: state.dim, team: state.team, pos: state.pos, pview: state.pview, pmetric: state.pmetric })); } catch (e) {}
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ team: state.team, pos: state.pos, pview: state.pview, pmetric: state.pmetric })); } catch (e) {}
 }
 
 // ---------- formatting ----------
@@ -424,8 +403,10 @@ function svgText(parent, x, y, str, attrs = {}) {
   t.textContent = str;
   return t;
 }
+// Container width, but never below `min` (narrow screens scroll instead of shrinking text)
+const chartW = (host, min) => Math.max(host.clientWidth, min);
 function chartSvg(host, W, H, label) {
-  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': label }, host);
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, style: `width:${W}px`, role: 'img', 'aria-label': label }, host);
   svgEl('title', {}, svg).textContent = label;
   return svg;
 }
@@ -467,10 +448,11 @@ function bindTip(node, content) {
 }
 
 // ---------- charts ----------
-const W = 600, LABEL_W = 200, ROW_H = 30, BAR_H = 16;
+const LABEL_W = 200, ROW_H = 30, BAR_H = 16;
 
-function divergingBars(host, rows, tipFor, label, W = 600) {
+function divergingBars(host, rows, tipFor, label) {
   host.replaceChildren();
+  const W = chartW(host, 480);
   const pad = 52, top = 4, H = top + rows.length * ROW_H + 4;
   const svg = chartSvg(host, W, H, label);
   const max = Math.max(1, ...rows.map(r => Math.abs(r.value)));
@@ -486,31 +468,13 @@ function divergingBars(host, rows, tipFor, label, W = 600) {
   svgEl('line', { class: 'baseline', x1: zero, x2: zero, y1: top - 2, y2: H - 2 }, svg);
 }
 
-function efficiencyBars(host, rows, label, W = 1200) {
-  host.replaceChildren();
-  const top = 4, padR = 56, H = top + rows.length * ROW_H + 4;
-  const svg = chartSvg(host, W, H, label);
-  const x0 = LABEL_W + 12, sx = v => x0 + v * (W - padR - x0);
-  rows.forEach((t, i) => {
-    const y = top + i * ROW_H, g = svgEl('g', { class: rowClass(t.team) }, svg);
-    svgText(g, LABEL_W - 8, y + ROW_H / 2, t.team, { class: 'lbl', 'text-anchor': 'end' });
-    svgEl('path', { class: 'mark', d: barPath(x0, sx(t.efficiency), y + (ROW_H - BAR_H) / 2, BAR_H), fill: 'var(--pos)' }, g);
-    svgText(g, sx(t.efficiency) + 6, y + ROW_H / 2, pct(t.efficiency), { class: 'val' });
-    bindTip(svgEl('rect', { class: 'hit', x: 0, y, width: W, height: ROW_H }, g), () => [
-      t.team,
-      [['Your starters', fix(t.starters_actual)], ['Best possible', fix(t.optimal)],
-       ['Left on bench', fix(t.bench_left)], ['Efficiency', pct(t.efficiency)]],
-    ]);
-  });
-  svgEl('line', { class: 'baseline', x1: x0, x2: x0, y1: top - 2, y2: H - 2 }, svg);
-}
-
-function heatmap(host, teams, label, W = 1200) {
+function heatmap(host, teams, label) {
   host.replaceChildren();
   const weeks = [...new Set(D.weeks.map(w => w.week))].sort((a, b) => a - b);
+  const W = chartW(host, LABEL_W + weeks.length * 52);
   const top = 22, gap = 2, cw = (W - LABEL_W) / weeks.length, H = top + teams.length * ROW_H;
   const svg = chartSvg(host, W, H, label);
-  const key = state.dim + '_diff';
+  const key = 'starters_diff';
   const max = Math.max(1, ...D.weeks.map(w => Math.abs(w[key])));
   weeks.forEach((wk, j) => svgText(svg, LABEL_W + j * cw + cw / 2, 8, 'Week ' + wk, { class: 'axis-t', 'text-anchor': 'middle' }));
   teams.forEach((team, i) => {
@@ -527,16 +491,17 @@ function heatmap(host, teams, label, W = 1200) {
       bindTip(svgEl('rect', { class: 'hit', x, y, width: cw, height: ROW_H }, cell), () => [
         `${team} · Week ${wk}`,
         [[`${w.result} vs ${w.opponent}`, `${score(w.score)}–${score(w.opp_score)}`],
-         [DIM_NAMES[state.dim] + ' projected', fix(w[state.dim + '_projected'])],
-         [DIM_NAMES[state.dim] + ' actual', fix(w[state.dim + '_actual'])],
+         ['Starters projected', fix(w.starters_projected)],
+         ['Starters actual', fix(w.starters_actual)],
          ['Difference', sign(v)]],
       ]);
     });
   });
 }
 
-function luckChart(host, rows, label, W = 1200) {
+function luckChart(host, rows, label) {
   host.replaceChildren();
+  const W = chartW(host, 600);
   const maxW = D.meta.weeks, top = 4, axisH = 22, padR = 56, H = top + rows.length * ROW_H + axisH;
   const svg = chartSvg(host, W, H, label);
   const x0 = LABEL_W + 12, x1 = W - padR, sx = v => x0 + (v / maxW) * (x1 - x0);
@@ -615,11 +580,6 @@ function standings() {
     { key: 'pa', label: 'PA', fmt: r => fix(r.pa), title: 'Points against: opponent starter points' },
     { key: 'allplay_wins', label: 'All-play', fmt: allplay, title: 'Record vs every team, every week' },
     signedCol('luck', 'Luck', 'Actual wins minus expected wins (what your scores would earn vs every team, every week)'),
-    signedCol('starters_diff', 'Starters ±', 'Actual minus projected points, starters only'),
-    signedCol('bench_diff', 'Bench ±', 'Actual minus projected points, bench only'),
-    signedCol('total_diff', 'Total ±', 'Actual minus projected points, starters + bench'),
-    signedCol('lineup_vs_espn', 'vs ESPN', "Actual starters minus ESPN's highest-projected lineup"),
-    { key: 'bench_left', label: 'Bench left', fmt: r => fix(r.bench_left), title: 'Best possible lineup minus actual starters (points left on the bench)' },
     { key: 'efficiency', label: 'Lineup eff.', fmt: r => pct(r.efficiency), title: 'Actual / best possible lineup' },
   ], D.teams, standingsSort, r => r.team);
 }
@@ -690,7 +650,6 @@ function recap() {
   const vs = w => `${w.result} vs ${w.opponent}`;
   const over = w => `Over ${w.opponent}, ${score(w.score)}–${score(w.opp_score)}`;
 
-  document.getElementById('week-label').textContent = `Week ${wk}`;
   document.getElementById('awards').replaceChildren(
     award('Top score', score(high.score), high.team, vs(high), [high.team]),
     award('Low score', score(low.score), low.team, vs(low), [low.team]),
@@ -751,7 +710,7 @@ function powerTrend(host, metric) {
   for (const r of D.power_by_week) (byWeek[r.team] ||= {})[r.week] = r;
   const isRank = metric === 'rank';
   const val = r => (isRank ? r.rank : r.power);
-  const T = teams.length, W = 1200;
+  const T = teams.length, W = chartW(host, 680);
   const plotH = Math.max(1, T - 1) * POWER_LINE_H;
   const H = POWER_TOP + plotH + POWER_AXIS_H;
   const x0 = POWER_PAD_L, x1 = W - POWER_PAD_R;
@@ -857,7 +816,6 @@ function powerTrend(host, metric) {
 }
 
 function renderPower() {
-  document.getElementById('power-sub').textContent = `Week ${state.week} of ${D.meta.weeks}`;
   document.getElementById('power-desc').textContent = state.pview === 'trend'
     ? 'Each line tracks a team from Week 1 to now; the shaded band marks the selected week. Hover a line for detail.'
     : 'Arrows show the move since the previous week.';
@@ -928,34 +886,13 @@ function scheduleGrid() {
   document.getElementById('schedule').replaceChildren(head, body);
 }
 
-// ---------- KPI tiles ----------
-function kpis() {
-  const by = (key, dir = 1) => [...D.teams].sort((a, b) => (b[key] - a[key]) * dir)[0];
-  const best = by('starters_diff'), unlucky = by('luck', -1), sharp = by('lineup_vs_espn'), wasted = by('bench_left');
-  const tile = (label, value, who, note) =>
-    h('div', { className: 'card tile' },
-      h('div', { className: 'label', textContent: label }),
-      h('div', { className: 'value', textContent: value }),
-      h('div', { className: 'who', textContent: who }),
-      h('div', { className: 'note', textContent: note }));
-  document.getElementById('kpis').replaceChildren(
-    tile('Best vs projections', sign(best.starters_diff) + ' pts', best.team, `Starters: ${fix(best.starters_actual)} actual vs ${fix(best.starters_projected)} projected`),
-    tile('Unluckiest record', sign(unlucky.luck) + ' wins', unlucky.team, `${record(unlucky)} actual vs ${fix(unlucky.exp_wins, 1)} expected wins`),
-    tile('Sharpest lineup calls', sign(sharp.lineup_vs_espn) + ' pts', sharp.team, "vs starting ESPN's highest-projected lineup"),
-    tile('Most points left on bench', fix(wasted.bench_left) + ' pts', wasted.team, `${pct(wasted.efficiency)} lineup efficiency`),
-  );
-}
-
 // ---------- render ----------
 function render() {
-  const d = state.dim, key = d + '_diff';
-  document.querySelectorAll('.dim-name').forEach(e => (e.textContent = DIM_NAMES[d]));
-  const teams = [...D.teams].sort((a, b) => b[key] - a[key]);
-  divergingBars(document.getElementById('bars'), teams.map(t => ({ team: t.team, value: t[key], t })), r => [
-    r.team, [[DIM_NAMES[d] + ' projected', fix(r.t[d + '_projected'])], [DIM_NAMES[d] + ' actual', fix(r.t[d + '_actual'])], ['Difference', sign(r.value)]],
-  ], `Points vs ESPN projection, ${DIM_NAMES[d].toLowerCase()}, by team`);
-  efficiencyBars(document.getElementById('efficiency'), [...D.teams].sort((a, b) => b.efficiency - a.efficiency), 'Lineup efficiency by team');
-  heatmap(document.getElementById('heat'), teams.map(t => t.team), `Week by week ${DIM_NAMES[d].toLowerCase()} points vs projection, by team`);
+  const teams = [...D.teams].sort((a, b) => b.starters_diff - a.starters_diff);
+  divergingBars(document.getElementById('bars'), teams.map(t => ({ team: t.team, value: t.starters_diff, t })), r => [
+    r.team, [['Starters projected', fix(r.t.starters_projected)], ['Starters actual', fix(r.t.starters_actual)], ['Difference', sign(r.value)]],
+  ], 'Points vs ESPN projection, starters, by team');
+  heatmap(document.getElementById('heat'), teams.map(t => t.team), 'Week by week starter points vs projection, by team');
   luckChart(document.getElementById('luck'), [...D.teams].sort((a, b) => b.luck - a.luck), 'Actual wins vs expected wins by team');
   divergingBars(document.getElementById('calls'),
     [...D.teams].sort((a, b) => b.lineup_vs_espn - a.lineup_vs_espn).map(t => ({ team: t.team, value: t.lineup_vs_espn, t })),
@@ -975,8 +912,12 @@ const m = D.meta;
 document.getElementById('title').textContent = m.league;
 document.getElementById('subtitle').textContent = `${m.year} season · Weeks 1–${m.weeks} · Who got lucky, and who saw past the projections`;
 document.title = `${m.league} · Advanced Analytics`;
-if (m.updated) document.getElementById('updated').textContent = 'Last updated ' +
-  new Date(m.updated).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+if (m.updated) {
+  const updated = new Date(m.updated), el = document.getElementById('updated');
+  el.textContent = 'Last updated ' + updated.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  // Daily refresh; older than 2 days usually means the ESPN cookie expired
+  if (Date.now() - updated > 2 * 864e5) el.append(' · ', h('span', { className: 'stale', textContent: 'Data may be stale' }));
+}
 const teamSel = document.getElementById('team');
 const teamNames = D.teams.map(t => t.team).sort();
 teamNames.forEach(t => teamSel.append(h('option', { value: t, textContent: t })));
@@ -1003,15 +944,6 @@ document.querySelectorAll('#power-metric button').forEach(b => {
   b.addEventListener('click', () => { state.pmetric = b.dataset.metric; renderPower(); syncState(); });
 });
 
-document.querySelectorAll('#dim button').forEach(b => {
-  b.setAttribute('aria-pressed', b.dataset.dim === state.dim);
-  b.addEventListener('click', () => {
-    state.dim = b.dataset.dim;
-    document.querySelectorAll('#dim button').forEach(x => x.setAttribute('aria-pressed', x === b));
-    render();
-    syncState();
-  });
-});
 teamSel.addEventListener('change', () => { state.team = teamSel.value; render(); syncState(); });
 posSel.addEventListener('change', () => { state.pos = posSel.value; render(); syncState(); });
 document.getElementById('theme').addEventListener('click', () => {
@@ -1029,6 +961,7 @@ function showTab() {
   document.querySelectorAll('[role="tab"]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   document.querySelectorAll('[data-page]').forEach(e => (e.hidden = e.dataset.page !== tab));
   document.querySelectorAll('[data-tabs]').forEach(e => (e.hidden = e.dataset.tabs !== tab));
+  render();  // charts size to their (now visible) container
 }
 document.querySelectorAll('[role="tab"]').forEach(b => b.addEventListener('click', () => {
   history.pushState(null, '', '#' + b.dataset.tab);  // pushState: no jump to elements with matching ids
@@ -1036,10 +969,14 @@ document.querySelectorAll('[role="tab"]').forEach(b => b.addEventListener('click
   scrollTo(0, 0);
 }));
 addEventListener('popstate', showTab);
+let lastWidth = innerWidth;
+addEventListener('resize', () => {
+  if (innerWidth === lastWidth) return;  // ignore height-only changes (mobile URL bar)
+  lastWidth = innerWidth;
+  requestAnimationFrame(render);
+});
 
 showTab();
-kpis();
-render();
 syncState();
 </script>
 </body>

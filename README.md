@@ -82,7 +82,7 @@ Separate from the dashboard: run `/top-moves` in [Claude Code](https://claude.co
   - Weekly score ~ normal(team's season average, league-wide SD)
   - Seeds by record, then points for (league tiebreaker); top 2 seeds get a bye
 - **Schedule**: results and remaining opponents for every team
-- **± vs projection**: actual minus ESPN projected points (starters, bench, total)
+- **± vs projection**: actual minus ESPN projected points (starters)
 - **Expected wins / luck**: expected wins = wins your score would earn vs every team, every week (all-play); luck = actual wins − expected wins
 - **vs ESPN lineup**: actual starter points minus what ESPN's highest-projected lineup would have scored
 - **Bench left / lineup efficiency**: best possible lineup in hindsight minus actual starters; actual / best possible
