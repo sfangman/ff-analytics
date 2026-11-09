@@ -112,6 +112,12 @@
   #power-trend g.row.hot path.mark { stroke: var(--pos); stroke-width: 3; }
   #power-trend g.row.hot .lbl { fill: var(--pos); font-weight: 700; }
 
+  /* Luck chart: same emphasis on the hovered/focused row */
+  #luck g.row { transition: opacity .18s ease; }
+  #luck:has(.hit:hover, .hit:focus-visible) g.row { opacity: .16; }
+  #luck g.row:has(.hit:hover, .hit:focus-visible) { opacity: 1; }
+  #luck g.row:has(.hit:hover, .hit:focus-visible) .lbl { fill: var(--pos); font-weight: 700; }
+
   .legend { display: flex; gap: 16px; color: var(--ink2); font-size: 12px; margin: -4px 0 8px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .key { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
@@ -323,10 +329,10 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
   </div>
 
   <ul class="notes">
-    <li>Source: ESPN fantasy API. Projections are ESPN's latest pre-game projections. Completed weeks only.</li>
+    <li>Source: ESPN fantasy API. Projections are ESPN's latest pre-game projections. Completed regular-season weeks only.</li>
     <li>Bench excludes IR. "Pts left on bench" = best possible lineup in hindsight minus actual starters.</li>
     <li>Lineup efficiency = actual starter points / best possible lineup points.</li>
-    <li>Power score (0–100) = 50% all-play win % + 30% all-play win % over the last 3 weeks + 20% actual win %. "Move" compares to the previous week.</li>
+    <li>Power score (0–100) = 60% all-play win % + 10% all-play win % over the last 3 weeks + 30% actual win %. "Move" compares to the previous week.</li>
   </ul>
   <footer id="updated"></footer>
 </main>
@@ -372,6 +378,7 @@ function syncState() {
 // ---------- formatting ----------
 const sign = (v, d = 1) => (v > 0.05 ? '+' : v < -0.05 ? '−' : '') + Math.abs(v).toFixed(d);
 const fix = (v, d = 1) => Number(v).toFixed(d);
+const score = v => fix(v, 2);  // game scores: 2 decimals so near-ties are visible
 const pct = v => (v * 100).toFixed(0) + '%';
 const record = t => `${t.wins}-${t.losses}${t.ties ? '-' + t.ties : ''}`;
 // Whole numbers unless a tie leaves a half win
@@ -493,7 +500,7 @@ function heatmap(host, teams, label, W = 1200) {
       svgText(cell, x + cw / 2, y + ROW_H / 2, sign(v), { class: 'cell-t' + (p > 55 ? ' strong' : ''), 'text-anchor': 'middle' });
       bindTip(svgEl('rect', { class: 'hit', x, y, width: cw, height: ROW_H }, cell), () => [
         `${team} · Week ${wk}`,
-        [[`${w.result} vs ${w.opponent}`, `${fix(w.score)}–${fix(w.opp_score)}`],
+        [[`${w.result} vs ${w.opponent}`, `${score(w.score)}–${score(w.opp_score)}`],
          [DIM_NAMES[state.dim] + ' projected', fix(w[state.dim + '_projected'])],
          [DIM_NAMES[state.dim] + ' actual', fix(w[state.dim + '_actual'])],
          ['Difference', sign(v)]],
@@ -577,7 +584,7 @@ const standingsSort = { key: 'record', dir: -1 };
 function standings() {
   sortableTable(document.getElementById('standings'), [
     { key: 'team', label: 'Team', left: true, title: 'Fantasy team' },
-    { key: 'record', label: 'Record', fmt: record, sort: r => r.wins + 0.5 * r.ties, title: 'Wins-losses(-ties)' },
+    { key: 'record', label: 'Record', fmt: record, sort: r => r.wins + 0.5 * r.ties + r.pf / 1e6, title: 'Wins-losses(-ties)' },  // PF breaks ties
     { key: 'pf', label: 'PF', fmt: r => fix(r.pf), title: 'Points for: total starter points scored' },
     { key: 'pa', label: 'PA', fmt: r => fix(r.pa), title: 'Points against: opponent starter points' },
     { key: 'allplay_wins', label: 'All-play', fmt: allplay, title: 'Record vs every team, every week' },
@@ -623,7 +630,8 @@ function playerTable() {
     { key: 'projected', label: 'Proj', fmt: r => fix(r.projected), title: 'Total ESPN projected points while rostered' },
     { key: 'actual', label: 'Actual', fmt: r => fix(r.actual), title: 'Total actual points while rostered' },
     signedCol('diff', '±', 'Actual minus projected, all rostered weeks'),
-    signedCol('started_diff', '± when started', 'Actual minus projected, only weeks in the starting lineup'),
+    { ...signedCol('started_diff', '± when started', 'Actual minus projected, only weeks in the starting lineup'),
+      fmt: r => (r.started ? sign(r.started_diff) : '—') },
     { key: 'bench_pts', label: 'Bench pts', fmt: r => fix(r.bench_pts), title: 'Points scored while on the bench' },
   ], filteredPlayers(), playerSort, r => r.team);
 }
@@ -654,22 +662,22 @@ function recap() {
       h('div', { className: 'who', textContent: who, title: who }),
       h('div', { className: 'note', textContent: note }));
   const vs = w => `${w.result} vs ${w.opponent}`;
-  const over = w => `Over ${w.opponent}, ${fix(w.score)}–${fix(w.opp_score)}`;
+  const over = w => `Over ${w.opponent}, ${score(w.score)}–${score(w.opp_score)}`;
 
   document.getElementById('week-label').textContent = `Week ${wk}`;
   document.getElementById('awards').replaceChildren(
-    award('Top score', fix(high.score), high.team, vs(high), [high.team]),
-    award('Low score', fix(low.score), low.team, vs(low), [low.team]),
-    award('Closest game', fix(close.score - close.opp_score) + ' pts', close.team, over(close), [close.team, close.opponent]),
-    award('Biggest blowout', fix(blowout.score - blowout.opp_score) + ' pts', blowout.team, over(blowout), [blowout.team, blowout.opponent]),
-    award('Luckiest win', fix(lucky.score), lucky.team, `Won with the ${scoreRank(lucky)}-highest score`, [lucky.team]),
-    award('Toughest loss', fix(unlucky.score), unlucky.team, `Lost with the ${scoreRank(unlucky)}-highest score`, [unlucky.team]),
+    award('Top score', score(high.score), high.team, vs(high), [high.team]),
+    award('Low score', score(low.score), low.team, vs(low), [low.team]),
+    award('Closest game', score(close.score - close.opp_score) + ' pts', close.team, over(close), [close.team, close.opponent]),
+    award('Biggest blowout', score(blowout.score - blowout.opp_score) + ' pts', blowout.team, over(blowout), [blowout.team, blowout.opponent]),
+    award('Luckiest win', score(lucky.score), lucky.team, `Won with the ${scoreRank(lucky)}-highest score`, [lucky.team]),
+    award('Toughest loss', score(unlucky.score), unlucky.team, `Lost with the ${scoreRank(unlucky)}-highest score`, [unlucky.team]),
     award('Player of the week', fix(mvp.actual), mvp.player, `${mvp.position} · ${mvp.team} · ${fix(mvp.projected)} proj`, [mvp.team]),
     award('Bench blunder', fix(blunder.bench_left) + ' pts', blunder.team, `Left on the bench (best lineup: ${fix(blunder.optimal)})`, [blunder.team]),
   );
 
-  const side = (team, score, win) =>
-    h('div', { className: 'side' + (win ? ' win' : '') }, h('span', { textContent: team, title: team }), h('strong', { textContent: fix(score) }));
+  const side = (team, pts, win) =>
+    h('div', { className: 'side' + (win ? ' win' : '') }, h('span', { textContent: team, title: team }), h('strong', { textContent: score(pts) }));
   document.getElementById('games').replaceChildren(...[...games].sort((a, b) => b.score - a.score).map(g =>
     h('div', { className: 'game' + ([g.team, g.opponent].includes(state.team) ? ' hl' : '') },
       side(g.team, g.score, g.result === 'W'), side(g.opponent, g.opp_score, false))));
@@ -707,7 +715,7 @@ function powerRankings() {
 }
 
 // Power rankings over time (rank or score), with the selected week highlighted.
-const POWER_LINE_H = 30, POWER_PAD_L = 46, POWER_PAD_R = 150, POWER_TOP = 22, POWER_AXIS_H = 24;
+const POWER_LINE_H = 30, POWER_PAD_L = 46, POWER_PAD_R = 210, POWER_TOP = 22, POWER_AXIS_H = 24;
 
 function powerTrend(host, metric) {
   host.replaceChildren();
@@ -767,7 +775,7 @@ function powerTrend(host, metric) {
     svgEl('line', { class: 'gridline', x1: x1, x2: x1 + 8, y1: l.y0, y2: l.y }, l.g);
     svgText(l.g, x1 + 12, l.y, l.team, { class: 'lbl' });
     const s = series.find(x => x.team === l.team);
-    if (s) s.pts.push({ x: W, y: l.y, r: s.last });  // so hovering the team name highlights it too
+    if (s) s.labelY = l.y;
   }
 
   // Sticky nearest-line hover/focus: one active team at a time, so crossing
@@ -789,6 +797,11 @@ function powerTrend(host, metric) {
     const b = svg.getBoundingClientRect();
     const mx = ((e.clientX - b.left) / b.width) * W, my = ((e.clientY - b.top) / b.height) * H;
     let best = null, bestD = Infinity;
+    // Names column: nearest label (labels may be nudged off their line's end point)
+    if (mx > x1) {
+      for (const s of series) { const dist = Math.abs(s.labelY - my); if (dist < bestD) { bestD = dist; best = s; } }
+      return best;
+    }
     for (const s of series) {
       const p = s.pts;
       if (mx < p[0].x || mx > p[p.length - 1].x) continue;
@@ -821,7 +834,7 @@ function renderPower() {
   document.getElementById('power-sub').textContent = `Week ${state.week} of ${D.meta.weeks}`;
   document.getElementById('power-desc').textContent = state.pview === 'trend'
     ? 'Each line tracks a team from Week 1 to now; the shaded band marks the selected week. Hover a line for detail.'
-    : 'Click a column to sort. Arrows show the move since the previous week.';
+    : 'Arrows show the move since the previous week.';
   document.getElementById('power-table').hidden = state.pview !== 'table';
   document.getElementById('power-trend').hidden = state.pview !== 'trend';
   document.getElementById('power-metric').hidden = state.pview !== 'trend';

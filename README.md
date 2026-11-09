@@ -35,14 +35,14 @@ uv run --env-file .env metrics.py   # pull data from ESPN, write CSVs
 uv run dashboard.py                 # build output/site/index.html from CSVs
 ```
 
-- `metrics.py` pulls completed weeks only (current week is skipped)
+- `metrics.py` pulls completed regular-season weeks only (current week and playoffs are skipped)
 - `dashboard.py` reads only local CSVs, so re-run it freely without hitting ESPN
 - Re-run weekly to refresh
 
 ### Auto refresh
 
 `.github/workflows/refresh.yml` rebuilds the dashboard and deploys it to GitHub Pages:
-- Daily (~6am ET), on push to `main`, or on demand from the Actions tab
+- Daily (~1:23am MT), on push to `main`, or on demand from the Actions tab
 - GitHub disables scheduled runs after 60 days without repo activity; re-enable from the Actions tab
 
 Setup:
@@ -76,7 +76,7 @@ Separate from the dashboard: run `/top-moves` in [Claude Code](https://claude.co
 ## Metrics
 
 - **Weekly recap**: latest week's awards (top/low score, closest game, blowout, luckiest win, toughest loss, player of the week, bench blunder) and scoreboard
-- **Power rankings**: 0-100 score = 50% all-play win % + 30% all-play win % over the last 3 weeks + 20% actual win %; arrows show rank change since last week
+- **Power rankings**: 0-100 score = 60% all-play win % + 10% all-play win % over the last 3 weeks + 30% actual win %; arrows show rank change since last week
 - **± vs projection**: actual minus ESPN projected points (starters, bench, total)
 - **Expected wins / luck**: expected wins = wins your score would earn vs every team, every week (all-play); luck = actual wins − expected wins
 - **vs ESPN lineup**: actual starter points minus what ESPN's highest-projected lineup would have scored

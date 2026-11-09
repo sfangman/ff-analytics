@@ -59,8 +59,9 @@ def weekly_rows(league: League, week: int) -> tuple[list[dict], list[dict]]:
 
 def main():
     league = load_league()
-    # current_week is in progress; only include completed weeks
-    weeks = range(1, league.current_week)
+    # Completed regular-season weeks only (current_week is in progress; playoffs skew season stats)
+    last = min(league.current_week - 1, league.settings.reg_season_count)
+    weeks = range(1, last + 1)
     results = [weekly_rows(league, w) for w in weeks]
     players = pd.DataFrame([r for rows, _ in results for r in rows])
     matchups = pd.DataFrame([m for _, ms in results for m in ms])
@@ -89,11 +90,11 @@ def main():
     matchups.to_csv("output/matchups.csv", index=False)
     with open("output/meta.json", "w", encoding="utf-8") as f:
         json.dump({"league": league.settings.name, "year": league.year,
-                   "weeks": league.current_week - 1,
+                   "weeks": last,
                    "updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
 
     pd.set_option("display.width", 200, "display.max_columns", None)
-    print(f"Weeks 1-{league.current_week - 1}\n")
+    print(f"Weeks 1-{last}\n")
     print(season[["starters_projected", "starters_actual", "starters_diff",
                   "bench_diff", "total_diff"]])
 
