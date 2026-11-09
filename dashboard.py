@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 OUT = Path("output")
@@ -116,6 +117,47 @@ def power_history(tw: pd.DataFrame) -> list[dict]:
     return out
 
 
+def playoff_odds(tw: pd.DataFrame, schedule: pd.DataFrame, playoff_teams: int, sims: int = 10_000) -> pd.DataFrame:
+    """Monte Carlo of the remaining regular season.
+
+    - Each sim draws a team's true mean ~ Normal(season mean, SD / sqrt(games)), so small samples aren't treated as exact
+    - Weekly score ~ Normal(true mean, league-wide SD around team means)
+    - Seeds by wins, then PF (league tiebreaker); top 2 seeds get a bye
+    """
+    teams = sorted(tw.team.unique())
+    idx = {t: i for i, t in enumerate(teams)}
+    g = tw.groupby("team")
+    mean = g.score.mean().reindex(teams).to_numpy()
+    n = g.size().reindex(teams).to_numpy()
+    sd = (tw.score - g.score.transform("mean")).std() or tw.score.std()  # 1 week played: no within-team spread yet
+    wins = np.tile(g.result.apply(lambda r: ((r == "W") + 0.5 * (r == "T")).sum()).reindex(teams).to_numpy(), (sims, 1))
+    pf = np.tile(g.score.sum().reindex(teams).to_numpy(), (sims, 1))
+
+    rng = np.random.default_rng(0)  # deterministic between rebuilds
+    true_mean = rng.normal(mean, sd / np.sqrt(n), (sims, len(teams)))
+    remaining = schedule[schedule.week > tw.week.max()]
+    for _, wk in remaining.groupby("week"):
+        scores = rng.normal(true_mean, sd)
+        pf += scores
+        for a, b in wk[wk.team < wk.opponent][["team", "opponent"]].itertuples(index=False):
+            i, j = idx[a], idx[b]
+            wins[:, i] += scores[:, i] > scores[:, j]
+            wins[:, j] += scores[:, j] > scores[:, i]
+
+    seed = (-(wins + pf / 1e6)).argsort(axis=1).argsort(axis=1) + 1  # 1 = top seed
+    opp_mean = remaining.opponent.map(dict(zip(teams, mean)))
+    return pd.DataFrame({
+        "team": teams,
+        "avg": mean,
+        "proj_wins": wins.mean(axis=0),
+        "playoff_pct": (seed <= playoff_teams).mean(axis=0),
+        "bye_pct": (seed <= 2).mean(axis=0),
+        "remaining": remaining.groupby("team").size().reindex(teams, fill_value=0).to_numpy(),
+        # Opponents' avg score; 0 once no games remain (NaN would break the page's JSON)
+        "sos": opp_mean.groupby(remaining.team).mean().reindex(teams).fillna(0).to_numpy(),
+    })
+
+
 def season_players(players: pd.DataFrame) -> pd.DataFrame:
     players = players.sort_values("week")
     started = players[players.group == "starters"]
@@ -149,6 +191,7 @@ def main():
     players = pd.read_csv(OUT / "players.csv")
     weekly = pd.read_csv(OUT / "weekly.csv")
     matchups = pd.read_csv(OUT / "matchups.csv")
+    schedule = pd.read_csv(OUT / "schedule.csv")
     meta = json.loads((OUT / "meta.json").read_text(encoding="utf-8"))
 
     tw = team_weeks(weekly, matchups, lineup_metrics(players))
@@ -156,6 +199,8 @@ def main():
         "meta": meta,
         "teams": season_teams(tw).round(3).to_dict("records"),
         "power_by_week": power_history(tw),
+        "odds": playoff_odds(tw, schedule, meta["playoff_teams"]).round(3).to_dict("records"),
+        "schedule": schedule.to_dict("records"),
         "weeks": tw.round(3).to_dict("records"),
         "players": season_players(players).round(2).to_dict("records"),
         "top_starters": top_starters(players).round(2).to_dict("records"),
