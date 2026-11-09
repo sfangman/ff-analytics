@@ -70,14 +70,6 @@ def season_teams(tw: pd.DataFrame) -> pd.DataFrame:
         s[col] = g.result.apply(lambda r: (r == res).sum())
     s["luck"] = s.wins + 0.5 * s.ties - s.exp_wins
     s["efficiency"] = s.starters_actual / s.optimal
-
-    last = tw.week.max()
-    s["power"] = power_scores(tw, last)
-    s["power_rank"] = s.power.rank(ascending=False, method="first")
-    if last > 1:
-        prev = power_scores(tw, last - 1)
-        s["power_rank_prev"] = prev.rank(ascending=False, method="first")
-    s["form"] = tw.sort_values("week").groupby("team").result.apply(lambda r: "".join(r.tail(3)))
     return s.rename(columns={"score": "pf", "opp_score": "pa"}).reset_index()
 
 
