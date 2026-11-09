@@ -54,7 +54,7 @@ Setup:
 
 ## Outputs
 
-`output/site/index.html`: interactive, self-contained dashboard (League / Projections / Players tabs); deployed to GitHub Pages by the workflow
+`output/site/index.html`: interactive, self-contained dashboard (League / Playoffs / Projections / Players tabs); deployed to GitHub Pages by the workflow
 
 Local data in `output/` (gitignored):
 
@@ -64,6 +64,7 @@ Local data in `output/` (gitignored):
 | `weekly.csv` | Team × week: projected, actual, diff for starters / bench / total |
 | `season.csv` | Team season totals of `weekly.csv` |
 | `matchups.csv` | Weekly matchup scores |
+| `schedule.csv` | Regular-season schedule (team × week opponent), including future weeks |
 
 ## Top moves
 
@@ -77,6 +78,10 @@ Separate from the dashboard: run `/top-moves` in [Claude Code](https://claude.co
 
 - **Weekly recap**: latest week's awards (top/low score, closest game, blowout, luckiest win, toughest loss, player of the week, bench blunder) and scoreboard
 - **Power rankings**: 0-100 score = 60% all-play win % + 10% all-play win % over the last 3 weeks + 30% actual win %; arrows show rank change since last week
+- **Playoff odds**: 10,000 simulations of the remaining regular season
+  - Weekly score ~ normal(team's season average, league-wide SD)
+  - Seeds by record, then points for (league tiebreaker); top 2 seeds get a bye
+- **Schedule**: results and remaining opponents for every team
 - **± vs projection**: actual minus ESPN projected points (starters, bench, total)
 - **Expected wins / luck**: expected wins = wins your score would earn vs every team, every week (all-play); luck = actual wins − expected wins
 - **vs ESPN lineup**: actual starter points minus what ESPN's highest-projected lineup would have scored

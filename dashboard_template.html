@@ -180,6 +180,15 @@
   .meter i b { display: block; height: 100%; background: var(--pos); border-radius: 0 4px 4px 0; }
   .meter span { width: 34px; text-align: right; }
 
+  .sched td.c, .sched th.c { text-align: center; padding: 6px 4px; font-size: 12px; }
+  .sched td.c { border-left: 2px solid var(--surface); }
+  .sched td.W { background: color-mix(in oklab, var(--pos) 16%, var(--surface)); color: var(--up); }
+  .sched td.L { background: color-mix(in oklab, var(--neg) 14%, var(--surface)); color: var(--down); }
+  .sched td.T { background: var(--mid); }
+  .sched th.next { color: var(--ink); }
+  .sched td.vs { box-shadow: inset 0 0 0 2px var(--pos); font-weight: 600; }
+  .sched td.c:focus-visible { outline: 2px solid var(--ink2); outline-offset: -2px; }
+
   @media (max-width: 1100px) {
     .grid { grid-template-columns: 1fr; }
   }
@@ -214,6 +223,7 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
   <nav class="filters" aria-label="Dashboard">
     <div class="tabs" role="tablist">
       <button type="button" role="tab" data-tab="league">League</button>
+      <button type="button" role="tab" data-tab="playoffs">Playoffs</button>
       <button type="button" role="tab" data-tab="projections">Projections</button>
       <button type="button" role="tab" data-tab="players">Players</button>
     </div>
@@ -276,6 +286,21 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
     </section>
   </div>
 
+  <div data-page="playoffs">
+    <div class="section-label" id="odds-label"></div>
+    <section class="card full" style="margin-bottom:16px">
+      <h2>Playoff odds</h2>
+      <p class="card-sub" id="odds-sub"></p>
+      <div class="scroll"><table id="odds"></table></div>
+    </section>
+
+    <section class="card full" style="margin-bottom:16px">
+      <h2>Schedule</h2>
+      <p class="card-sub">Results and remaining opponents (ESPN abbreviations). Hover a cell for details.</p>
+      <div class="scroll"><table id="schedule" class="sched"></table></div>
+    </section>
+  </div>
+
   <div data-page="projections">
     <div class="section-label">Season to date</div>
     <section class="kpis" id="kpis"></section>
@@ -332,6 +357,7 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
     <li>Source: ESPN fantasy API. Projections are ESPN's latest pre-game projections. Completed regular-season weeks only.</li>
     <li>Bench excludes IR. "Pts left on bench" = best possible lineup in hindsight minus actual starters.</li>
     <li>Lineup efficiency = actual starter points / best possible lineup points.</li>
+    <li>Playoff odds: 10,000 simulations of the remaining regular season; each team's weekly score is drawn from its season average with league-wide variance. Seeds by record, then points for.</li>
     <li>Power score (0–100) = 60% all-play win % + 10% all-play win % over the last 3 weeks + 30% actual win %. "Move" compares to the previous week.</li>
   </ul>
   <footer id="updated"></footer>
@@ -844,6 +870,63 @@ function renderPower() {
   else powerRankings();
 }
 
+// ---------- playoffs ----------
+// Show near-certain odds as >99% / <1% rather than a rounded 100% / 0%
+const oddsPct = v => (v >= 1 ? '100%' : v >= 0.995 ? '>99%' : v <= 0 ? '0%' : v < 0.005 ? '<1%' : pct(v));
+const teamsBy = Object.fromEntries(D.teams.map(t => [t.team, t]));
+const oddsBy = Object.fromEntries(D.odds.map(o => [o.team, o]));
+const abbrev = t => D.meta.abbrevs?.[t] || t;
+
+const oddsSort = { key: 'playoff_pct', dir: -1 };
+function playoffOdds() {
+  const left = D.meta.reg_season_weeks - D.meta.weeks;
+  document.getElementById('odds-label').textContent = `Through Week ${D.meta.weeks} · ${left} week${left === 1 ? '' : 's'} left`;
+  document.getElementById('odds-sub').textContent =
+    `Top ${D.meta.playoff_teams} make the playoffs; top 2 get a bye. Click a column to sort.`;
+  const meter = v => h('span', { className: 'meter' },
+    h('i', {}, Object.assign(h('b'), { style: `width:${v * 100}%` })), h('span', { textContent: oddsPct(v) }));
+  sortableTable(document.getElementById('odds'), [
+    { key: 'team', label: 'Team', left: true, title: 'Fantasy team' },
+    { key: 'record', label: 'Record', fmt: record, sort: r => r.wins + 0.5 * r.ties + r.pf / 1e6, title: 'Current record' },
+    { key: 'pf', label: 'PF', fmt: r => fix(r.pf), title: 'Points for (seeding tiebreaker)' },
+    { key: 'proj_wins', label: 'Proj. wins', fmt: r => fix(r.proj_wins), title: 'Average final wins across simulations' },
+    { key: 'sos', label: 'Opp. avg', fmt: r => (r.remaining ? fix(r.sos) : '—'),
+      title: "Remaining opponents' average score (higher = tougher schedule)" },
+    { key: 'playoff_pct', label: 'Playoffs', left: true, fmt: r => meter(r.playoff_pct), title: 'Chance of a playoff spot' },
+    { key: 'bye_pct', label: 'Bye', fmt: r => oddsPct(r.bye_pct), title: 'Chance of a top-2 seed' },
+  ], D.odds.map(o => ({ ...teamsBy[o.team], ...o })), oddsSort, r => r.team);
+}
+
+function scheduleGrid() {
+  const weeks = [...new Set(D.schedule.map(s => s.week))].sort((a, b) => a - b);
+  const next = D.meta.weeks + 1;
+  const games = {};
+  for (const s of D.schedule) games[s.team + '|' + s.week] = s.opponent;
+  const played = {};
+  for (const w of D.weeks) played[w.team + '|' + w.week] = w;
+  const teams = [...D.odds].sort((a, b) => b.playoff_pct - a.playoff_pct || b.proj_wins - a.proj_wins).map(o => o.team);
+
+  const head = h('thead', {}, h('tr', {},
+    h('th', { textContent: 'Team', className: 'l', style: 'cursor:default' }),
+    ...weeks.map(w => h('th', { textContent: (w === next ? 'Wk ' : '') + w, className: 'c' + (w === next ? ' next' : ''),
+      title: w === next ? 'Next week' : 'Week ' + w, style: 'cursor:default' }))));
+  const body = h('tbody', {}, ...teams.map(team => h('tr', { className: state.team === team ? 'hl' : '' },
+    h('td', { textContent: team, className: 'l' }),
+    ...weeks.map(wk => {
+      const opp = games[team + '|' + wk], w = played[team + '|' + wk];
+      if (!opp) return h('td', { className: 'c muted', textContent: 'Bye' });
+      const td = h('td', { className: 'c' + (w ? ' ' + w.result : '') + (state.team && opp === state.team ? ' vs' : ''),
+        textContent: (w ? w.result + ' ' : '') + abbrev(opp) });
+      const o = teamsBy[opp], oo = oddsBy[opp];
+      bindTip(td, () => [`${team} · Week ${wk}`, w
+        ? [[`${w.result} vs ${opp}`, `${score(w.score)}–${score(w.opp_score)}`]]
+        : [[`vs ${opp}`, ''], ['Opp. record', record(o)], ['Opp. avg score', fix(o.pf / (o.wins + o.losses + o.ties))],
+           ['Opp. playoff odds', oddsPct(oo.playoff_pct)]]]);
+      return td;
+    }))));
+  document.getElementById('schedule').replaceChildren(head, body);
+}
+
 // ---------- KPI tiles ----------
 function kpis() {
   const by = (key, dir = 1) => [...D.teams].sort((a, b) => (b[key] - a[key]) * dir)[0];
@@ -879,6 +962,8 @@ function render() {
     'Lineup calls vs ESPN by team');
   recap();
   renderPower();
+  playoffOdds();
+  scheduleGrid();
   standings();
   leaderboards();
   playerTable();
@@ -937,7 +1022,7 @@ document.getElementById('theme').addEventListener('click', () => {
 });
 
 // ---------- tabs ----------
-const TABS = ['league', 'projections', 'players'];
+const TABS = ['league', 'playoffs', 'projections', 'players'];
 function showTab() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : TABS[0];
   document.querySelectorAll('[role="tab"]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));

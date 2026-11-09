@@ -57,6 +57,16 @@ def weekly_rows(league: League, week: int) -> tuple[list[dict], list[dict]]:
     return rows, matchups
 
 
+def schedule_rows(league: League) -> list[dict]:
+    """Regular-season schedule: one row per team per week, including future weeks."""
+    return [
+        {"week": i + 1, "team": t.team_name, "opponent": opp.team_name}
+        for t in league.teams
+        for i, opp in enumerate(t.schedule[:league.settings.reg_season_count])
+        if opp is not t  # bye
+    ]
+
+
 def main():
     league = load_league()
     # Completed regular-season weeks only (current_week is in progress; playoffs skew season stats)
@@ -88,9 +98,13 @@ def main():
     weekly.to_csv("output/weekly.csv", index=False)
     season.to_csv("output/season.csv")
     matchups.to_csv("output/matchups.csv", index=False)
+    pd.DataFrame(schedule_rows(league)).to_csv("output/schedule.csv", index=False)
     with open("output/meta.json", "w", encoding="utf-8") as f:
         json.dump({"league": league.settings.name, "year": league.year,
                    "weeks": last,
+                   "reg_season_weeks": league.settings.reg_season_count,
+                   "playoff_teams": league.settings.playoff_team_count,
+                   "abbrevs": {t.team_name: t.team_abbrev for t in league.teams},
                    "updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
 
     pd.set_option("display.width", 200, "display.max_columns", None)
