@@ -195,15 +195,19 @@ def main():
     meta = json.loads((OUT / "meta.json").read_text(encoding="utf-8"))
 
     tw = team_weeks(weekly, matchups, lineup_metrics(players))
+    # Season stats use the regular season only; weekly recaps include the playoffs
+    reg_weeks = meta["reg_season_weeks"]
+    reg = tw[tw.week <= reg_weeks]
     data = {
         "meta": meta,
-        "teams": season_teams(tw).round(3).to_dict("records"),
-        "power_by_week": power_history(tw),
-        "odds": playoff_odds(tw, schedule, meta["playoff_teams"]).round(3).to_dict("records"),
+        "teams": season_teams(reg).round(3).to_dict("records"),
+        "power_by_week": power_history(reg),
+        "odds": playoff_odds(reg, schedule, meta["playoff_teams"]).round(3).to_dict("records"),
         "schedule": schedule.to_dict("records"),
         "weeks": tw.round(3).to_dict("records"),
-        "players": season_players(players).round(2).to_dict("records"),
-        "top_starters": top_starters(players).round(2).to_dict("records"),
+        "players": season_players(players[players.week <= reg_weeks]).round(2).to_dict("records"),
+        # Teams that played that week (excludes playoff byes, like the other recap awards)
+        "top_starters": top_starters(players.merge(tw[["week", "team"]])).round(2).to_dict("records"),
     }
 
     payload = json.dumps(data).replace("</", "<\\/")

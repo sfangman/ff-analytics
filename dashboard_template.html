@@ -177,6 +177,14 @@
   .meter i b { display: block; height: 100%; background: var(--pos); border-radius: 0 4px 4px 0; }
   .meter span { width: 34px; text-align: right; }
 
+  .game .tag { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+  .bracket { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap: 16px; }
+  .round { display: flex; flex-direction: column; gap: 10px; }
+  .round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 10px; }
+  .round h3 { margin: 0; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .side .seed { color: var(--muted); font-weight: 400; margin-right: 6px; }
+  .side.tbd { color: var(--muted); font-style: italic; }
+
   .sched td.c, .sched th.c { text-align: center; padding: 6px 4px; font-size: 12px; }
   .sched td.c { border-left: 2px solid var(--surface); }
   .sched td.W { background: color-mix(in oklab, var(--pos) 16%, var(--surface)); color: var(--up); }
@@ -232,7 +240,7 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
   </nav>
 
   <div data-page="league">
-    <label class="section-label">Week <select id="week"></select></label>
+    <label class="section-label">Week <select id="week"></select> <span id="round-label"></span></label>
     <section class="card full">
       <h2>Recap</h2>
       <p class="card-sub">Awards and final scores</p>
@@ -279,6 +287,11 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
   </div>
 
   <div data-page="playoffs">
+    <section class="card full" id="bracket-card" style="margin:20px 0 0" hidden>
+      <h2>Playoff bracket <span class="chip" id="bracket-chip" hidden>Projected</span></h2>
+      <p class="card-sub" id="bracket-sub"></p>
+      <div class="scroll"><div class="bracket" id="bracket"></div></div>
+    </section>
     <div class="section-label" id="odds-label"></div>
     <section class="card full" style="margin-bottom:16px">
       <h2>Playoff odds</h2>
@@ -338,7 +351,7 @@ try { const t = localStorage.getItem('ff-theme'); if (t) document.documentElemen
   </div>
 
   <ul class="notes">
-    <li>Source: ESPN fantasy API. Projections are ESPN's latest pre-game projections. Completed regular-season weeks only.</li>
+    <li>Source: ESPN fantasy API. Projections are ESPN's latest pre-game projections. Season stats use completed regular-season weeks; weekly recaps include the playoffs.</li>
     <li>Bench excludes IR. "Pts left on bench" = best possible lineup in hindsight minus actual starters.</li>
     <li>Lineup efficiency = actual starter points / best possible lineup points.</li>
     <li>Playoff odds: 10,000 simulations of the remaining regular season; each team's weekly score is drawn from its season average with league-wide variance. Seeds by record, then points for.</li>
@@ -389,6 +402,11 @@ const record = t => `${t.wins}-${t.losses}${t.ties ? '-' + t.ties : ''}`;
 // Whole numbers unless a tie leaves a half win
 const wins = v => (Number.isInteger(v) ? String(v) : v.toFixed(1));
 const allplay = t => `${wins(t.allplay_wins)}-${wins(t.allplay_losses)}`;
+// Regular season vs playoffs
+const REG = D.meta.reg_season_weeks;
+const regWeeks = Math.min(D.meta.weeks, REG);  // completed regular-season weeks
+const roundName = wk => ['Championship', 'Semifinals', 'Quarterfinals'][(D.meta.final_week ?? REG) - wk] || 'Playoffs';
+const powerWeek = () => Math.min(state.week, REG);  // power rankings stop at the regular season
 const dirClass = v => (v > 0.05 ? 'up' : v < -0.05 ? 'down' : '');
 
 // ---------- DOM helpers ----------
@@ -470,12 +488,12 @@ function divergingBars(host, rows, tipFor, label) {
 
 function heatmap(host, teams, label) {
   host.replaceChildren();
-  const weeks = [...new Set(D.weeks.map(w => w.week))].sort((a, b) => a - b);
+  const weeks = [...new Set(D.weeks.map(w => w.week))].filter(w => w <= REG).sort((a, b) => a - b);
   const W = chartW(host, LABEL_W + weeks.length * 52);
   const top = 22, gap = 2, cw = (W - LABEL_W) / weeks.length, H = top + teams.length * ROW_H;
   const svg = chartSvg(host, W, H, label);
   const key = 'starters_diff';
-  const max = Math.max(1, ...D.weeks.map(w => Math.abs(w[key])));
+  const max = Math.max(1, ...D.weeks.filter(w => w.week <= REG).map(w => Math.abs(w[key])));
   weeks.forEach((wk, j) => svgText(svg, LABEL_W + j * cw + cw / 2, 8, 'Week ' + wk, { class: 'axis-t', 'text-anchor': 'middle' }));
   teams.forEach((team, i) => {
     const y = top + i * ROW_H, g = svgEl('g', { class: rowClass(team) }, svg);
@@ -502,7 +520,7 @@ function heatmap(host, teams, label) {
 function luckChart(host, rows, label) {
   host.replaceChildren();
   const W = chartW(host, 600);
-  const maxW = D.meta.weeks, top = 4, axisH = 22, padR = 56, H = top + rows.length * ROW_H + axisH;
+  const maxW = regWeeks, top = 4, axisH = 22, padR = 56, H = top + rows.length * ROW_H + axisH;
   const svg = chartSvg(host, W, H, label);
   const x0 = LABEL_W + 12, x1 = W - padR, sx = v => x0 + (v / maxW) * (x1 - x0);
   const yEnd = top + rows.length * ROW_H;
@@ -623,6 +641,10 @@ function playerTable() {
 }
 
 // ---------- weekly recap ----------
+const side = (team, pts, win, seed) =>
+  h('div', { className: 'side' + (win ? ' win' : '') },
+    h('span', { title: team }, ...(seed ? [h('span', { className: 'seed', textContent: seed })] : []), team),
+    h('strong', { textContent: pts == null ? '' : score(pts) }));
 const ordinal = n => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
 
 function recap() {
@@ -661,16 +683,17 @@ function recap() {
     award('Bench blunder', fix(blunder.bench_left) + ' pts', blunder.team, `Left on the bench (best lineup: ${fix(blunder.optimal)})`, [blunder.team]),
   );
 
-  const side = (team, pts, win) =>
-    h('div', { className: 'side' + (win ? ' win' : '') }, h('span', { textContent: team, title: team }), h('strong', { textContent: score(pts) }));
-  document.getElementById('games').replaceChildren(...[...games].sort((a, b) => b.score - a.score).map(g =>
+  document.getElementById('round-label').textContent = wk > REG ? '· ' + roundName(wk) : '';
+  const bracketFirst = g => (g.type === 'WINNERS_BRACKET' ? 0 : 1);
+  document.getElementById('games').replaceChildren(...[...games].sort((a, b) => bracketFirst(a) - bracketFirst(b) || b.score - a.score).map(g =>
     h('div', { className: 'game' + ([g.team, g.opponent].includes(state.team) ? ' hl' : '') },
+      ...(wk > REG ? [h('div', { className: 'tag', textContent: g.type === 'WINNERS_BRACKET' ? roundName(wk) : 'Consolation' })] : []),
       side(g.team, g.score, g.result === 'W'), side(g.opponent, g.opp_score, false))));
 }
 
 // ---------- power rankings ----------
 function powerRankings() {
-  const rows = (D.power_by_week || []).filter(r => r.week === state.week).sort((a, b) => a.rank - b.rank);
+  const rows = (D.power_by_week || []).filter(r => r.week === powerWeek()).sort((a, b) => a.rank - b.rank);
   const move = t => {
     if (t.rank_prev == null) return '';
     const d = t.rank_prev - t.rank;
@@ -726,13 +749,13 @@ function powerTrend(host, metric) {
   }
 
   const cw = weeks.length === 1 ? x1 - x0 : (x1 - x0) / (weeks.length - 1);
-  const cx = sx(state.week);
+  const pw = powerWeek(), cx = sx(pw);
   const bx = Math.max(x0, cx - cw / 2), bw = Math.min(x1, cx + cw / 2) - bx;
   svgEl('rect', { x: bx, y: POWER_TOP, width: bw, height: plotH, fill: 'color-mix(in oklab, var(--pos) 9%, transparent)' }, svg);
   svgEl('line', { class: 'baseline', x1: cx, x2: cx, y1: POWER_TOP - 6, y2: POWER_TOP + plotH }, svg);
   const axisY = POWER_TOP + plotH + POWER_AXIS_H - 4;
   svgText(svg, x0 - 8, axisY, 'Wk', { class: 'axis-t', 'text-anchor': 'end' });
-  for (const w of weeks) svgText(svg, sx(w), axisY, String(w), { class: w === state.week ? 'lbl' : 'axis-t', 'text-anchor': 'middle' });
+  for (const w of weeks) svgText(svg, sx(w), axisY, String(w), { class: w === pw ? 'lbl' : 'axis-t', 'text-anchor': 'middle' });
 
   // Full-chart hit surface so the pointer handler fires anywhere over the plot
   svgEl('rect', { x: 0, y: 0, width: W, height: H, fill: 'transparent', 'pointer-events': 'all' }, svg);
@@ -747,8 +770,8 @@ function powerTrend(host, metric) {
     const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join(' ');
     const stroke = team === state.team ? 'var(--pos)' : 'var(--deemph)';
     svgEl('path', { class: 'mark', d, fill: 'none', stroke, 'stroke-width': team === state.team ? 2.5 : 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, g);
-    pts.forEach(p => svgEl('circle', { class: 'mark', cx: p.x, cy: p.y, r: p.r.week === state.week ? 4 : 2.5,
-      fill: p.r.week === state.week ? stroke : 'var(--surface)', stroke, 'stroke-width': 2 }, g));
+    pts.forEach(p => svgEl('circle', { class: 'mark', cx: p.x, cy: p.y, r: p.r.week === pw ? 4 : 2.5,
+      fill: p.r.week === pw ? stroke : 'var(--surface)', stroke, 'stroke-width': 2 }, g));
     series.push({ team, g, pts, last: rows[rows.length - 1] });
     endLabels.push({ team, g, y: pts[pts.length - 1].y, y0: pts[pts.length - 1].y });
   }
@@ -768,8 +791,8 @@ function powerTrend(host, metric) {
   let hot = null;
   const tipRows = t => {
     const s = series.find(x => x.team === t);
-    const r = byWeek[t][state.week] || s.last;
-    return [t, [['Through week', String(state.week)], ['Rank', '#' + r.rank], ['Power', fix(r.power)],
+    const r = byWeek[t][pw] || s.last;
+    return [t, [['Through week', String(pw)], ['Rank', '#' + r.rank], ['Power', fix(r.power)],
                 ['Record', record(r)], ['All-play', allplay(r)]]];
   };
   const setHot = t => {
@@ -816,9 +839,9 @@ function powerTrend(host, metric) {
 }
 
 function renderPower() {
-  document.getElementById('power-desc').textContent = state.pview === 'trend'
+  document.getElementById('power-desc').textContent = (state.week > REG ? 'Final regular-season rankings. ' : '') + (state.pview === 'trend'
     ? 'Each line tracks a team from Week 1 to now; the shaded band marks the selected week. Hover a line for detail.'
-    : 'Arrows show the move since the previous week.';
+    : 'Arrows show the move since the previous week.');
   document.getElementById('power-table').hidden = state.pview !== 'table';
   document.getElementById('power-trend').hidden = state.pview !== 'trend';
   document.getElementById('power-metric').hidden = state.pview !== 'trend';
@@ -838,8 +861,9 @@ const abbrev = t => D.meta.abbrevs?.[t] || t;
 
 const oddsSort = { key: 'playoff_pct', dir: -1 };
 function playoffOdds() {
-  const left = D.meta.reg_season_weeks - D.meta.weeks;
-  document.getElementById('odds-label').textContent = `Through Week ${D.meta.weeks} · ${left} week${left === 1 ? '' : 's'} left`;
+  const left = REG - regWeeks;
+  document.getElementById('odds-label').textContent = left
+    ? `Through Week ${regWeeks} · ${left} week${left === 1 ? '' : 's'} left` : 'Final regular-season standings';
   document.getElementById('odds-sub').textContent =
     `Top ${D.meta.playoff_teams} make the playoffs; top 2 get a bye. Click a column to sort.`;
   const meter = v => h('span', { className: 'meter' },
@@ -853,7 +877,9 @@ function playoffOdds() {
       title: "Remaining opponents' average score (higher = tougher schedule)" },
     { key: 'playoff_pct', label: 'Playoffs', left: true, fmt: r => meter(r.playoff_pct), title: 'Chance of a playoff spot' },
     { key: 'bye_pct', label: 'Bye', fmt: r => oddsPct(r.bye_pct), title: 'Chance of a top-2 seed' },
-  ], D.odds.map(o => ({ ...teamsBy[o.team], ...o })), oddsSort, r => r.team);
+  ], D.odds.map(o => ({ ...teamsBy[o.team], ...o }))
+    .sort((a, b) => D.meta.seeds[a.team] - D.meta.seeds[b.team]),  // ties in odds keep seed order
+  oddsSort, r => r.team);
 }
 
 function scheduleGrid() {
@@ -886,6 +912,49 @@ function scheduleGrid() {
   document.getElementById('schedule').replaceChildren(head, body);
 }
 
+// ---------- playoff bracket ----------
+// ESPN 6-team bracket, no reseeding: 3v6 and 4v5, then 1 vs 4/5 winner and 2 vs 3/6 winner
+function bracket() {
+  const card = document.getElementById('bracket-card');
+  card.hidden = D.meta.playoff_teams !== 6;
+  if (card.hidden) return;
+  const projected = regWeeks < REG;  // seeds lock after the regular season
+  document.getElementById('bracket-chip').hidden = !projected;
+  const seedOf = D.meta.seeds;
+  const bySeed = Object.fromEntries(Object.entries(seedOf).map(([t, sd]) => [sd, t]));
+  const game = (wk, team) => team && D.weeks.find(w => w.week === wk && w.team === team && w.type === 'WINNERS_BRACKET');
+  const winner = (wk, a) => { const g = game(wk, a); return g ? (g.result === 'W' ? a : g.opponent) : null; };
+
+  const F = D.meta.final_week, [r1, r2, r3] = [F - 2, F - 1, F];
+  const qfA = [bySeed[3], bySeed[6]], qfB = [bySeed[4], bySeed[5]];
+  const sfA = [bySeed[1], winner(r1, qfB[0])], sfB = [bySeed[2], winner(r1, qfA[0])];
+  const final = [winner(r2, sfA[0]), winner(r2, sfB[0])];
+  const champ = winner(r3, final[0]);
+
+  // One matchup card; unknown teams show where they come from
+  const matchup = (wk, [a, b], from) => {
+    const g = game(wk, a);
+    const slot = (t, i, pts) => t
+      ? side(t, pts, g && g.team === t ? g.result === 'W' : g && g.result === 'L', seedOf[t])
+      : h('div', { className: 'side tbd' }, h('span', { textContent: 'Winner of ' + from[i] }));
+    return h('div', { className: 'game' + ([a, b].includes(state.team) && state.team ? ' hl' : '') },
+      slot(a, 0, g?.score), slot(b, 1, g?.opp_score));
+  };
+  const bye = t => h('div', { className: 'game' + (state.team === t ? ' hl' : '') },
+    side(t, null, false, seedOf[t]), h('div', { className: 'side tbd' }, h('span', { textContent: 'Bye' })));
+  const round = (wk, ...games) => h('div', { className: 'round' },
+    h('h3', { textContent: `${roundName(wk)} · Week ${wk}` }), h('div', { className: 'round-games' }, ...games));
+
+  document.getElementById('bracket-sub').textContent = champ ? `Champion: ${champ}`
+    : projected ? `Projected: if the season ended today (through Week ${regWeeks}). ESPN seeds.`
+    : 'ESPN seeds from final regular-season standings.';
+  document.getElementById('bracket').replaceChildren(
+    round(r1, bye(bySeed[1]), matchup(r1, qfB, []), matchup(r1, qfA, []), bye(bySeed[2])),
+    round(r2, matchup(r2, sfA, ['', '4/5']), matchup(r2, sfB, ['', '3/6'])),
+    round(r3, matchup(r3, final, ['1 · 4/5', '2 · 3/6'])),
+  );
+}
+
 // ---------- render ----------
 function render() {
   const teams = [...D.teams].sort((a, b) => b.starters_diff - a.starters_diff);
@@ -900,6 +969,7 @@ function render() {
     'Lineup calls vs ESPN by team');
   recap();
   renderPower();
+  bracket();
   playoffOdds();
   scheduleGrid();
   standings();
@@ -969,11 +1039,12 @@ document.querySelectorAll('[role="tab"]').forEach(b => b.addEventListener('click
   scrollTo(0, 0);
 }));
 addEventListener('popstate', showTab);
-let lastWidth = innerWidth;
+let lastWidth = innerWidth, pending = 0;
 addEventListener('resize', () => {
   if (innerWidth === lastWidth) return;  // ignore height-only changes (mobile URL bar)
   lastWidth = innerWidth;
-  requestAnimationFrame(render);
+  cancelAnimationFrame(pending);
+  pending = requestAnimationFrame(render);
 });
 
 showTab();

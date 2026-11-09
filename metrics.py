@@ -35,6 +35,7 @@ def weekly_rows(league: League, week: int) -> tuple[list[dict], list[dict]]:
                 "away": box.away_team.team_name,
                 "home_score": box.home_score,
                 "away_score": box.away_score,
+                "type": box.matchup_type,  # NONE (regular season), WINNERS_BRACKET, or a consolation ladder
             })
         for team, lineup in ((box.home_team, box.home_lineup), (box.away_team, box.away_lineup)):
             if not team:  # bye
@@ -69,8 +70,9 @@ def schedule_rows(league: League) -> list[dict]:
 
 def main():
     league = load_league()
-    # Completed regular-season weeks only (current_week is in progress; playoffs skew season stats)
-    last = min(league.current_week - 1, league.settings.reg_season_count)
+    # Completed weeks only (current_week is in progress), through the playoffs
+    reg = league.settings.reg_season_count
+    last = min(league.current_week - 1, league.finalScoringPeriod)
     weeks = range(1, last + 1)
     results = [weekly_rows(league, w) for w in weeks]
     players = pd.DataFrame([r for rows, _ in results for r in rows])
@@ -89,7 +91,7 @@ def main():
     weekly = weekly.round(2).reset_index()
 
     season = (
-        weekly.drop(columns="week").groupby("team").sum().round(2)
+        weekly[weekly.week <= reg].drop(columns="week").groupby("team").sum().round(2)
         .sort_values("starters_diff", ascending=False)
     )
 
@@ -102,13 +104,15 @@ def main():
     with open("output/meta.json", "w", encoding="utf-8") as f:
         json.dump({"league": league.settings.name, "year": league.year,
                    "weeks": last,
-                   "reg_season_weeks": league.settings.reg_season_count,
+                   "reg_season_weeks": reg,
+                   "final_week": league.finalScoringPeriod,
                    "playoff_teams": league.settings.playoff_team_count,
                    "abbrevs": {t.team_name: t.team_abbrev for t in league.teams},
+                   "seeds": {t.team_name: t.standing for t in league.teams},  # ESPN playoff seed (current standings until locked)
                    "updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
 
     pd.set_option("display.width", 200, "display.max_columns", None)
-    print(f"Weeks 1-{last}\n")
+    print(f"Weeks 1-{min(last, reg)} (regular season)\n")
     print(season[["starters_projected", "starters_actual", "starters_diff",
                   "bench_diff", "total_diff"]])
 
