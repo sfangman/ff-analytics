@@ -79,7 +79,7 @@ Separate from the dashboard: run `/top-moves` in [Claude Code](https://claude.co
 
 - **Weekly recap**: latest week's awards (top/low score, closest game, blowout, luckiest win, toughest loss, player of the week, bench blunder) and scoreboard; playoff weeks tag bracket vs consolation games
 - **Power rankings**: 0-100 score = 60% all-play win % + 10% all-play win % over the last 3 weeks + 30% actual win %; arrows show rank change since last week
-- **Playoff bracket**: seeds and results once the regular season ends (6-team ESPN bracket, no reseeding)
+- **Playoff bracket**: ESPN seeds and results (6-team bracket, no reseeding); projected from current standings until the regular season ends
 - **Playoff odds**: 10,000 simulations of the remaining regular season
   - Weekly score ~ normal(team's season average, league-wide SD)
   - Seeds by record, then points for (league tiebreaker); top 2 seeds get a bye

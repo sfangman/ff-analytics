@@ -108,10 +108,11 @@ def main():
                    "final_week": league.finalScoringPeriod,
                    "playoff_teams": league.settings.playoff_team_count,
                    "abbrevs": {t.team_name: t.team_abbrev for t in league.teams},
+                   "seeds": {t.team_name: t.standing for t in league.teams},  # ESPN playoff seed (current standings until locked)
                    "updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
 
     pd.set_option("display.width", 200, "display.max_columns", None)
-    print(f"Weeks 1-{last}\n")
+    print(f"Weeks 1-{min(last, reg)} (regular season)\n")
     print(season[["starters_projected", "starters_actual", "starters_diff",
                   "bench_diff", "total_diff"]])
 

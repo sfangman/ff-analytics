@@ -493,7 +493,7 @@ function heatmap(host, teams, label) {
   const top = 22, gap = 2, cw = (W - LABEL_W) / weeks.length, H = top + teams.length * ROW_H;
   const svg = chartSvg(host, W, H, label);
   const key = 'starters_diff';
-  const max = Math.max(1, ...D.weeks.map(w => Math.abs(w[key])));
+  const max = Math.max(1, ...D.weeks.filter(w => w.week <= REG).map(w => Math.abs(w[key])));
   weeks.forEach((wk, j) => svgText(svg, LABEL_W + j * cw + cw / 2, 8, 'Week ' + wk, { class: 'axis-t', 'text-anchor': 'middle' }));
   teams.forEach((team, i) => {
     const y = top + i * ROW_H, g = svgEl('g', { class: rowClass(team) }, svg);
@@ -878,7 +878,7 @@ function playoffOdds() {
     { key: 'playoff_pct', label: 'Playoffs', left: true, fmt: r => meter(r.playoff_pct), title: 'Chance of a playoff spot' },
     { key: 'bye_pct', label: 'Bye', fmt: r => oddsPct(r.bye_pct), title: 'Chance of a top-2 seed' },
   ], D.odds.map(o => ({ ...teamsBy[o.team], ...o }))
-    .sort((a, b) => (b.wins + 0.5 * b.ties) - (a.wins + 0.5 * a.ties) || b.pf - a.pf),  // ties in odds keep standings order
+    .sort((a, b) => D.meta.seeds[a.team] - D.meta.seeds[b.team]),  // ties in odds keep seed order
   oddsSort, r => r.team);
 }
 
@@ -920,18 +920,16 @@ function bracket() {
   if (card.hidden) return;
   const projected = regWeeks < REG;  // seeds lock after the regular season
   document.getElementById('bracket-chip').hidden = !projected;
-  const seedOf = Object.fromEntries([...D.teams]
-    .sort((a, b) => (b.wins + 0.5 * b.ties) - (a.wins + 0.5 * a.ties) || b.pf - a.pf)
-    .map((t, i) => [t.team, i + 1]));
+  const seedOf = D.meta.seeds;
   const bySeed = Object.fromEntries(Object.entries(seedOf).map(([t, sd]) => [sd, t]));
   const game = (wk, team) => team && D.weeks.find(w => w.week === wk && w.team === team && w.type === 'WINNERS_BRACKET');
-  const winner = (wk, a, b) => { const g = game(wk, a); return g ? (g.result === 'W' ? a : b) : null; };
+  const winner = (wk, a) => { const g = game(wk, a); return g ? (g.result === 'W' ? a : g.opponent) : null; };
 
-  const [r1, r2, r3] = [REG + 1, REG + 2, REG + 3];
+  const F = D.meta.final_week, [r1, r2, r3] = [F - 2, F - 1, F];
   const qfA = [bySeed[3], bySeed[6]], qfB = [bySeed[4], bySeed[5]];
-  const sfA = [bySeed[1], winner(r1, ...qfB)], sfB = [bySeed[2], winner(r1, ...qfA)];
-  const final = [winner(r2, ...sfA), winner(r2, ...sfB)];
-  const champ = winner(r3, ...final);
+  const sfA = [bySeed[1], winner(r1, qfB[0])], sfB = [bySeed[2], winner(r1, qfA[0])];
+  const final = [winner(r2, sfA[0]), winner(r2, sfB[0])];
+  const champ = winner(r3, final[0]);
 
   // One matchup card; unknown teams show where they come from
   const matchup = (wk, [a, b], from) => {
@@ -948,8 +946,8 @@ function bracket() {
     h('h3', { textContent: `${roundName(wk)} · Week ${wk}` }), h('div', { className: 'round-games' }, ...games));
 
   document.getElementById('bracket-sub').textContent = champ ? `Champion: ${champ}`
-    : projected ? `Projected: if the season ended today (through Week ${regWeeks}). Seeds by record, then points for.`
-    : 'Seeds from final regular-season standings (record, then points for).';
+    : projected ? `Projected: if the season ended today (through Week ${regWeeks}). ESPN seeds.`
+    : 'ESPN seeds from final regular-season standings.';
   document.getElementById('bracket').replaceChildren(
     round(r1, bye(bySeed[1]), matchup(r1, qfB, []), matchup(r1, qfA, []), bye(bySeed[2])),
     round(r2, matchup(r2, sfA, ['', '4/5']), matchup(r2, sfB, ['', '3/6'])),
@@ -1041,11 +1039,12 @@ document.querySelectorAll('[role="tab"]').forEach(b => b.addEventListener('click
   scrollTo(0, 0);
 }));
 addEventListener('popstate', showTab);
-let lastWidth = innerWidth;
+let lastWidth = innerWidth, pending = 0;
 addEventListener('resize', () => {
   if (innerWidth === lastWidth) return;  // ignore height-only changes (mobile URL bar)
   lastWidth = innerWidth;
-  requestAnimationFrame(render);
+  cancelAnimationFrame(pending);
+  pending = requestAnimationFrame(render);
 });
 
 showTab();

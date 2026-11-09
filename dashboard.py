@@ -206,7 +206,8 @@ def main():
         "schedule": schedule.to_dict("records"),
         "weeks": tw.round(3).to_dict("records"),
         "players": season_players(players[players.week <= reg_weeks]).round(2).to_dict("records"),
-        "top_starters": top_starters(players).round(2).to_dict("records"),
+        # Teams that played that week (excludes playoff byes, like the other recap awards)
+        "top_starters": top_starters(players.merge(tw[["week", "team"]])).round(2).to_dict("records"),
     }
 
     payload = json.dumps(data).replace("</", "<\\/")
