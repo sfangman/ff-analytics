@@ -112,6 +112,12 @@
   #power-trend g.row.hot path.mark { stroke: var(--pos); stroke-width: 3; }
   #power-trend g.row.hot .lbl { fill: var(--pos); font-weight: 700; }
 
+  /* Luck chart: same emphasis on the hovered/focused row */
+  #luck g.row { transition: opacity .18s ease; }
+  #luck:has(.hit:hover, .hit:focus-visible) g.row { opacity: .16; }
+  #luck g.row:has(.hit:hover, .hit:focus-visible) { opacity: 1; }
+  #luck g.row:has(.hit:hover, .hit:focus-visible) .lbl { fill: var(--pos); font-weight: 700; }
+
   .legend { display: flex; gap: 16px; color: var(--ink2); font-size: 12px; margin: -4px 0 8px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .key { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
@@ -709,7 +715,7 @@ function powerRankings() {
 }
 
 // Power rankings over time (rank or score), with the selected week highlighted.
-const POWER_LINE_H = 30, POWER_PAD_L = 46, POWER_PAD_R = 150, POWER_TOP = 22, POWER_AXIS_H = 24;
+const POWER_LINE_H = 30, POWER_PAD_L = 46, POWER_PAD_R = 210, POWER_TOP = 22, POWER_AXIS_H = 24;
 
 function powerTrend(host, metric) {
   host.replaceChildren();
@@ -769,7 +775,7 @@ function powerTrend(host, metric) {
     svgEl('line', { class: 'gridline', x1: x1, x2: x1 + 8, y1: l.y0, y2: l.y }, l.g);
     svgText(l.g, x1 + 12, l.y, l.team, { class: 'lbl' });
     const s = series.find(x => x.team === l.team);
-    if (s) s.pts.push({ x: W, y: l.y, r: s.last });  // so hovering the team name highlights it too
+    if (s) s.labelY = l.y;
   }
 
   // Sticky nearest-line hover/focus: one active team at a time, so crossing
@@ -791,6 +797,11 @@ function powerTrend(host, metric) {
     const b = svg.getBoundingClientRect();
     const mx = ((e.clientX - b.left) / b.width) * W, my = ((e.clientY - b.top) / b.height) * H;
     let best = null, bestD = Infinity;
+    // Names column: nearest label (labels may be nudged off their line's end point)
+    if (mx > x1) {
+      for (const s of series) { const dist = Math.abs(s.labelY - my); if (dist < bestD) { bestD = dist; best = s; } }
+      return best;
+    }
     for (const s of series) {
       const p = s.pts;
       if (mx < p[0].x || mx > p[p.length - 1].x) continue;
